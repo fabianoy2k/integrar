@@ -1,0 +1,205 @@
+<div class="max-w-4xl mx-auto p-6">
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Exportador Contábil</h2>
+        
+        @if($mensagem)
+            <div class="mb-4 p-4 rounded-lg {{ str_contains($mensagem, 'Erro') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">
+                {{ $mensagem }}
+            </div>
+        @endif
+
+        <div class="space-y-6">
+            <!-- Seleção de arquivo importado -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Arquivo Importado</label>
+                <select wire:model="importacaoId" class="w-full rounded-md border-gray-300 shadow-sm">
+                    <option value="">Selecione um arquivo importado (opcional)</option>
+                    @foreach($importacoes as $importacao)
+                        <option value="{{ $importacao->id }}">
+                            {{ $importacao->nome_arquivo }} ({{ $importacao->data_inicial }} a {{ $importacao->data_final }})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <!-- Período -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Data Início</label>
+                    <input type="date" wire:model="dataInicio" class="w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Data Fim</label>
+                    <input type="date" wire:model="dataFim" class="w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+            </div>
+
+            <!-- Formato -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Formato do Arquivo</label>
+                <div class="space-y-2">
+                    <label class="flex items-center">
+                        <input type="radio" name="formato" wire:model="formato" value="csv" class="mr-2">
+                        <span>CSV (separado por ponto e vírgula)</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="formato" wire:model="formato" value="txt" class="mr-2">
+                        <span>TXT (campos posicionais)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Layout -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Layout de Exportação</label>
+                <div class="space-y-2">
+                    <label class="flex items-center">
+                        <input type="radio" name="layoutExport" wire:model="layoutExport" value="padrao" class="mr-2">
+                        <span>Padrão - Uma linha por lançamento</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="layoutExport" wire:model="layoutExport" value="contabil" class="mr-2">
+                        <span>Contábil - Linha de débito e crédito separadas</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="layoutExport" wire:model="layoutExport" value="simples" class="mr-2">
+                        <span>Simples - Apenas data, histórico e valor</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="layoutExport" wire:model="layoutExport" value="dominio" class="mr-2">
+                        <span>Domínio Sistemas - Layout específico para importação</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Campos específicos para Domínio -->
+            @if($layoutExport === 'dominio')
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg">
+                    @if($layoutExport === 'dominio' && (empty($codigoEmpresa) || empty($cnpjEmpresa)))
+                        <div class="col-span-2 mb-4 p-3 bg-yellow-100 border border-yellow-400 rounded-lg">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-yellow-800">Atenção</h3>
+                                    <div class="mt-2 text-sm text-yellow-700">
+                                        <p>Para o layout Domínio, os campos <strong>Código da Empresa</strong> e <strong>CNPJ da Empresa</strong> são obrigatórios.</p>
+                                        @if($importacaoId)
+                                            <p class="mt-1">Selecione uma importação que tenha empresa associada ou preencha manualmente.</p>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Seleção manual de empresa -->
+                        <div class="col-span-2 mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Selecionar Empresa</label>
+                            <select wire:model="empresaSelecionada" class="w-full rounded-md border-gray-300 shadow-sm">
+                                <option value="">Selecione uma empresa...</option>
+                                @foreach($empresas as $empresa)
+                                    <option value="{{ $empresa->id }}">
+                                        {{ $empresa->nome }} (Código: {{ $empresa->codigo_sistema }}, CNPJ: {{ $empresa->cnpj }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-sm text-gray-500">Selecione uma empresa para preencher automaticamente os campos obrigatórios.</p>
+                        </div>
+                    @endif
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Código da Empresa</label>
+                        <input type="text" wire:model="codigoEmpresa" placeholder="Ex: 0000001" class="w-full rounded-md border-gray-300 shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">CNPJ da Empresa</label>
+                        <input type="text" wire:model="cnpjEmpresa" placeholder="00.000.000/0000-00" class="w-full rounded-md border-gray-300 shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Nota</label>
+                        <select wire:model="tipoNota" class="w-full rounded-md border-gray-300 shadow-sm">
+                            <option value="01">01 - Contabilidade</option>
+                            <option value="02">02 - Entradas</option>
+                            <option value="03">03 - Saídas</option>
+                            <option value="04">04 - Serviços</option>
+                            <option value="05">05 - Contabilidade-Lançamentos em lote</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Sistema</label>
+                        <select wire:model="sistema" class="w-full rounded-md border-gray-300 shadow-sm">
+                            <option value="1">1 - Contabilidade</option>
+                            <option value="2">2 - Caixa</option>
+                            <option value="0">0 - Outro</option>
+                        </select>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Quantidade de Registros -->
+            @if($importacaoId || ($dataInicio && $dataFim))
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-blue-800 mb-2">Resumo da Exportação</h3>
+                    <div class="text-sm text-blue-700">
+                        <p><strong>Registros que serão exportados:</strong> {{ number_format($this->getQuantidadeRegistros(), 0, ',', '.') }} lançamento(s)</p>
+                        @if($importacaoId)
+                            @php $importacao = $importacoes->find($importacaoId) @endphp
+                            @if($importacao)
+                                <p><strong>Arquivo:</strong> {{ $importacao->nome_arquivo }}</p>
+                                <p><strong>Período:</strong> {{ $importacao->data_inicial }} a {{ $importacao->data_final }}</p>
+                            @endif
+                        @else
+                            <p><strong>Período:</strong> {{ $dataInicio }} a {{ $dataFim }}</p>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
+            <!-- Descrição dos Layouts -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h3 class="font-semibold text-gray-800 mb-2">Descrição dos Layouts:</h3>
+                <div class="space-y-2 text-sm text-gray-600">
+                    <div>
+                        <strong>Padrão:</strong> Exporta todos os campos em uma linha por lançamento
+                    </div>
+                    <div>
+                        <strong>Contábil:</strong> Separa débito e crédito em linhas diferentes (padrão contábil)
+                    </div>
+                    <div>
+                        <strong>Simples:</strong> Exporta apenas os campos essenciais para relatórios básicos
+                    </div>
+                    <div>
+                        <strong>Domínio Sistemas:</strong> Layout específico para importação no sistema Domínio, com registros 01, 02, 03 e 99
+                    </div>
+                </div>
+            </div>
+
+            <button 
+                type="button"
+                wire:click="exportar"
+                wire:loading.attr="disabled"
+                class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                <span wire:loading.remove>Exportar Lançamentos</span>
+                <span wire:loading>Gerando arquivo...</span>
+            </button>
+        </div>
+
+        @if($arquivoGerado)
+            <div class="mt-6 p-4 bg-green-50 rounded-lg">
+                <h3 class="font-semibold text-green-800 mb-2">Arquivo Gerado</h3>
+                <div class="mb-3">
+                    <p class="text-green-700"><strong>Nome do arquivo:</strong> {{ $arquivoGerado }}</p>
+                    <p class="text-green-700"><strong>Registros exportados:</strong> {{ number_format($quantidadeRegistros, 0, ',', '.') }} lançamento(s)</p>
+                </div>
+                <a 
+                    href="{{ route('download.arquivo', ['arquivo' => $arquivoGerado]) }}" 
+                    class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
+                >
+                    Download do Arquivo
+                </a>
+            </div>
+        @endif
+    </div>
+</div>

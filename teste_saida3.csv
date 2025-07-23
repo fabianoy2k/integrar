@@ -1,0 +1,3 @@
+Código Sequencial;Tipo;Data do Lançamento;Usuário;Conta Débito;Conta Crédito;Valor do Lançamento;Código do Histórico;Histórico (Complemento);Código da Filial/Matriz;Nome da Empresa;Número da Nota
+0000001;C;20250707US;UARIO01;1.1.1.0;1    2.;0,00;0000150;000000PAGAMENTO FORNECEDOR ABC LTDA NF 123456;;PAGAMENTO FORNECEDOR ABC LTDA NF 123456;000000
+;;;;1.1.1.0;1    2.;0,00;0000250;000000PAGAMENTO FORNECEDOR XYZ LTDA NF 789012;;PAGAMENTO FORNECEDOR XYZ LTDA NF 789012;000000
