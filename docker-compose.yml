@@ -22,6 +22,9 @@ services:
           rm -rf temp-laravel; \
           chmod -R 777 storage bootstrap/cache; \
         fi; \
+        if [ ! -d vendor ]; then \
+          composer install; \
+        fi; \
         php artisan serve --host=0.0.0.0 --port=8000"
       '
     user: root
