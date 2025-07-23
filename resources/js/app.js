@@ -1,2 +1,5 @@
 import './bootstrap';
-// Removido Alpine.js para evitar múltiplas instâncias
+import Alpine from 'alpinejs';
+
+window.Alpine = Alpine;
+Alpine.start();

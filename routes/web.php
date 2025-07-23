@@ -16,10 +16,12 @@ Route::middleware(['auth'])->group(function () {
         return redirect()->route('importador-avancado');
     });
     Route::get('/importador-avancado', App\Livewire\ImportadorAvancado::class)->name('importador-avancado');
+    Route::get('/importador-personalizado', App\Livewire\ImportadorPersonalizado::class)->name('importador-personalizado');
     Route::get('/tabela', App\Livewire\TabelaLancamentos::class)->name('tabela');
     Route::get('/empresas', App\Livewire\GerenciadorEmpresas::class)->name('empresas');
     Route::get('/terceiros', App\Livewire\GerenciadorTerceiros::class)->name('terceiros');
     Route::get('/amarracoes', App\Livewire\GerenciadorAmarracoes::class)->name('amarracoes');
+    Route::get('/regras-amarracao', App\Livewire\GerenciadorRegrasAmarracao::class)->name('regras-amarracao');
     Route::get('/importacoes', App\Livewire\ListaImportacoes::class)->name('importacoes');
     Route::get('/exportador', App\Livewire\ExportadorContabil::class)->name('exportador');
     Route::get('/parametros-extratos', App\Livewire\GerenciadorParametrosExtratos::class)->name('parametros-extratos');

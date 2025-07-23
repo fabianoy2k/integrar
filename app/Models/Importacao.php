@@ -11,6 +11,8 @@ class Importacao extends Model
     
     protected $fillable = [
         'nome_arquivo',
+        'nome',
+        'tipo',
         'total_registros',
         'registros_processados',
         'status',
@@ -19,6 +21,7 @@ class Importacao extends Model
         'codigo_empresa',
         'cnpj_empresa',
         'empresa_id',
+        'user_id',
         'data_inicial',
         'data_final'
     ];
@@ -36,5 +39,10 @@ class Importacao extends Model
     public function empresa()
     {
         return $this->belongsTo(Empresa::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

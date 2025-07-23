@@ -3,7 +3,7 @@
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
             <div class="p-6 border-b border-gray-200">
                 <h2 class="text-2xl font-bold text-gray-900 mb-4">
-                    Importador Avançado
+                    Importador
                 </h2>
                 <p class="text-gray-600 mb-6">
                     Selecione o layout do arquivo, a empresa de destino e faça upload do arquivo para importação.

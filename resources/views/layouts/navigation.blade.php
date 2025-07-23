@@ -12,7 +12,6 @@
                 </div>
 
                 <!-- Navigation Links -->
-                @if (!request()->routeIs('home'))
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex items-center">
                     <!-- Cadastros Dropdown -->
                     <div x-data="{ open: false }" class="relative">
@@ -34,6 +33,7 @@
                         </button>
                         <div x-show="open" @click.away="open = false" class="absolute left-0 mt-2 w-56 bg-white border rounded shadow-lg z-50">
                             <a href="{{ route('importador-avancado') }}" @click="open = false" class="block px-4 py-2 hover:bg-blue-50">📄 Importador Avançado</a>
+                            <a href="{{ route('importador-personalizado') }}" @click="open = false" class="block px-4 py-2 hover:bg-blue-50 text-red-600 font-bold">🎯 Importador Personalizado (TESTE)</a>
                             <a href="{{ route('importacoes') }}" @click="open = false" class="block px-4 py-2 hover:bg-blue-50">🕑 Importações anteriores</a>
                             <a href="{{ route('parametros-extratos') }}" @click="open = false" class="block px-4 py-2 hover:bg-blue-50">📝 Parâmetros de Extrato</a>
                         </div>
@@ -47,6 +47,7 @@
                         <div x-show="open" @click.away="open = false" class="absolute left-0 mt-2 w-56 bg-white border rounded shadow-lg z-50">
                             <a href="{{ route('tabela') }}" @click="open = false" class="block px-4 py-2 hover:bg-blue-50">📋 Tabela de lançamentos</a>
                             <a href="{{ route('amarracoes') }}" @click="open = false" class="block px-4 py-2 hover:bg-blue-50">🔗 Amarrações</a>
+                            <a href="{{ route('regras-amarracao') }}" @click="open = false" class="block px-4 py-2 hover:bg-blue-50">⚙️ Regras de Amarração</a>
                             <span class="block px-4 py-2 text-gray-400 cursor-not-allowed">🛠️ Reclassificações <span class="text-xs">(em breve)</span></span>
                         </div>
                     </div>
@@ -73,7 +74,6 @@
                         </div>
                     </div>
                 </div>
-                @endif
             </div>
 
             <!-- Avatar do usuário logado -->
@@ -106,7 +106,6 @@
     </div>
 
     <!-- Responsive Navigation Menu -->
-    @if (!request()->routeIs('home'))
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('usuarios')" :active="request()->routeIs('usuarios')">
@@ -114,6 +113,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('importador-avancado')" :active="request()->routeIs('importador-avancado')">
                 Importador Avançado
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('importador-personalizado')" :active="request()->routeIs('importador-personalizado')">
+                Importador Personalizado
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('tabela')" :active="request()->routeIs('tabela')">
                 Tabela Lançamentos
@@ -126,6 +128,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('amarracoes')" :active="request()->routeIs('amarracoes')">
                 Amarrações
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('regras-amarracao')" :active="request()->routeIs('regras-amarracao')">
+                Regras de Amarração
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('importacoes')" :active="request()->routeIs('importacoes')">
                 Importações
@@ -163,5 +168,4 @@
             </div>
         </div>
     </div>
-    @endif
 </nav>

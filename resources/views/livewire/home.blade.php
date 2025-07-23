@@ -14,7 +14,8 @@
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">📥 Importação</h2>
             <ul class="space-y-2">
-                <li><a href="{{ route('importador-avancado') }}" class="flex items-center gap-2 hover:underline">📄 Importador Avançado</a></li>
+                <li><a href="{{ route('importador-avancado') }}" class="flex items-center gap-2 hover:underline">📄 Importador</a></li>
+                <li><a href="{{ route('importador-personalizado') }}" class="flex items-center gap-2 hover:underline">🎯 Importador Personalizado</a></li>
                 <li><a href="{{ route('importacoes') }}" class="flex items-center gap-2 hover:underline">🕑 Importações anteriores</a></li>
                 <li><a href="{{ route('parametros-extratos') }}" class="flex items-center gap-2 hover:underline">📝 Parâmetros de Extrato</a></li>
             </ul>
@@ -25,6 +26,7 @@
             <ul class="space-y-2">
                 <li><a href="{{ route('tabela') }}" class="flex items-center gap-2 hover:underline">📋 Tabela de lançamentos</a></li>
                 <li><a href="{{ route('amarracoes') }}" class="flex items-center gap-2 hover:underline">🔗 Amarrações</a></li>
+                <li><a href="{{ route('regras-amarracao') }}" class="flex items-center gap-2 hover:underline">⚙️ Regras de Amarração</a></li>
                 <li class="text-gray-400 flex items-center gap-2">🛠️ Reclassificações <span class="text-xs">(em breve)</span></li>
             </ul>
         </div>
