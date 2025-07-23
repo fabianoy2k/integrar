@@ -27,12 +27,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/home', App\Livewire\Home::class)->name('home');
 
     // CRUD Empresas Operadoras (apenas admin)
-    Route::middleware(['auth'])->get('/empresas-operadoras', function () {
-        if (!Auth::user() || Auth::user()->role !== 'admin') {
-            abort(403, 'Acesso não autorizado.');
-        }
-        return \Livewire\Livewire::mount('empresas-operadoras-form');
-    })->name('empresas-operadoras');
+    Route::get('/empresas-operadoras', App\Livewire\EmpresasOperadorasForm::class)->name('empresas-operadoras');
 });
 
 Route::get('/dashboard', function () {
