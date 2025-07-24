@@ -1,3 +1,36 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Classes customizadas para o importador personalizado */
+.multiples-valores-row {
+    display: flex !important;
+    gap: 8px !important;
+    margin-bottom: 8px !important;
+    align-items: end !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+}
+
+.multiples-valores-coluna {
+    flex: 2 !important;
+    min-width: 0 !important;
+    max-width: 200px !important;
+}
+
+.multiples-valores-conta {
+    width: 100px !important;
+    min-width: 100px !important;
+    max-width: 100px !important;
+}
+
+.multiples-valores-historico {
+    flex: 3 !important;
+    min-width: 0 !important;
+}
+
+.multiples-valores-botao {
+    display: flex !important;
+    align-items: end !important;
+    width: auto !important;
+}

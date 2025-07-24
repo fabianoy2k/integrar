@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 // Redirecionar '/' para home
 Route::get('/', function () {
@@ -31,6 +32,17 @@ Route::middleware(['auth'])->group(function () {
     // CRUD Empresas Operadoras (apenas admin)
     Route::get('/empresas-operadoras', App\Livewire\EmpresasOperadorasForm::class)->name('empresas-operadoras');
 });
+
+// Rota para download de arquivos (fora do middleware de autenticação)
+Route::get('/download/{arquivo}', function ($arquivo) {
+    $path = storage_path("app/exports/{$arquivo}");
+    
+    if (!file_exists($path)) {
+        abort(404, 'Arquivo não encontrado');
+    }
+    
+    return response()->download($path);
+})->name('download.arquivo');
 
 Route::get('/dashboard', function () {
     return view('dashboard');

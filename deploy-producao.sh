@@ -121,6 +121,23 @@ compile_assets() {
     fi
 }
 
+# Criar diretórios necessários
+create_directories() {
+    log_info "Criando diretórios necessários..."
+    
+    # Criar diretório exports para downloads
+    docker-compose exec app mkdir -p storage/app/exports
+    docker-compose exec app mkdir -p storage/app/public
+    
+    # Criar link simbólico do storage se não existir
+    if [ ! -L "public/storage" ]; then
+        log_info "Criando link simbólico do storage..."
+        docker-compose exec app php artisan storage:link
+    fi
+    
+    log_success "Diretórios criados"
+}
+
 # Verificar permissões
 fix_permissions() {
     log_info "Ajustando permissões..."
@@ -128,6 +145,9 @@ fix_permissions() {
     # Ajustar permissões para storage e bootstrap/cache
     docker-compose exec app chmod -R 775 storage
     docker-compose exec app chmod -R 775 bootstrap/cache
+    
+    # Ajustar permissões específicas para exports
+    docker-compose exec app chmod -R 755 storage/app/exports
     
     log_success "Permissões ajustadas"
 }
@@ -141,6 +161,13 @@ health_check() {
         log_success "Aplicação está respondendo"
     else
         log_warning "Aplicação pode não estar respondendo corretamente"
+    fi
+    
+    # Verificar se o diretório exports existe
+    if docker-compose exec app test -d storage/app/exports; then
+        log_success "Diretório exports está disponível"
+    else
+        log_warning "Diretório exports não encontrado"
     fi
 }
 
@@ -166,12 +193,13 @@ main() {
     echo "2. 🔄 Backup do banco"
     echo "3. 📦 Instalar dependências"
     echo "4. 🗄️ Executar migrations"
-    echo "5. 🧹 Limpar caches"
-    echo "6. ⚡ Otimizar produção"
-    echo "7. 🎨 Compilar assets"
-    echo "8. 🔐 Ajustar permissões"
-    echo "9. 🏥 Verificar saúde"
-    echo "10. 📝 Verificar logs"
+    echo "5. 📁 Criar diretórios"
+    echo "6. 🧹 Limpar caches"
+    echo "7. ⚡ Otimizar produção"
+    echo "8. 🎨 Compilar assets"
+    echo "9. 🔐 Ajustar permissões"
+    echo "10. 🏥 Verificar saúde"
+    echo "11. 📝 Verificar logs"
     echo ""
     
     # Executar etapas
@@ -179,6 +207,7 @@ main() {
     backup_database
     install_composer_dependencies
     run_migrations
+    create_directories
     clear_caches
     optimize_production
     compile_assets
@@ -194,8 +223,10 @@ main() {
     echo "📊 Resumo:"
     echo "- Backup criado em backups/"
     echo "- Dependências atualizadas"
+    echo "- Diretórios de storage criados"
     echo "- Caches otimizados"
     echo "- Permissões ajustadas"
+    echo "- Rota de download configurada"
     echo ""
     echo "🔗 Acesse: http://localhost"
 }

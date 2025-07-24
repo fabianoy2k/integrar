@@ -16,11 +16,59 @@
                     <option value="">Selecione um arquivo importado (opcional)</option>
                     @foreach($importacoes as $importacao)
                         <option value="{{ $importacao->id }}">
-                            {{ $importacao->nome_arquivo }} ({{ $importacao->data_inicial }} a {{ $importacao->data_final }})
+                            {{ $importacao->nome_arquivo }} 
+                            @if($importacao->empresa)
+                                - {{ $importacao->empresa->nome }}
+                            @endif
+                            ({{ $importacao->data_inicial }} a {{ $importacao->data_final }})
+                            - {{ $importacao->created_at->format('d/m/Y H:i') }}
                         </option>
                     @endforeach
                 </select>
             </div>
+            
+            <!-- Informações da Importação Selecionada -->
+            @if($importacaoId)
+                @php $importacaoSelecionada = $importacoes->find($importacaoId) @endphp
+                @if($importacaoSelecionada)
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h3 class="font-semibold text-blue-800 mb-3">Informações da Importação</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <p class="text-blue-700"><strong>Arquivo:</strong> {{ $importacaoSelecionada->nome_arquivo }}</p>
+                                <p class="text-blue-700"><strong>Empresa:</strong> 
+                                    @if($importacaoSelecionada->empresa)
+                                        {{ $importacaoSelecionada->empresa->nome }}
+                                        @if($importacaoSelecionada->empresa->codigo_sistema)
+                                            (Código: {{ $importacaoSelecionada->empresa->codigo_sistema }})
+                                        @endif
+                                    @else
+                                        <span class="text-gray-500">Não informada</span>
+                                    @endif
+                                </p>
+                                <p class="text-blue-700"><strong>Período:</strong> {{ $importacaoSelecionada->data_inicial }} a {{ $importacaoSelecionada->data_final }}</p>
+                            </div>
+                            <div>
+                                <p class="text-blue-700"><strong>Data de Importação:</strong> {{ $importacaoSelecionada->created_at->format('d/m/Y H:i:s') }}</p>
+                                <p class="text-blue-700"><strong>Status:</strong> 
+                                    <span class="px-2 py-1 text-xs rounded-full 
+                                        @if($importacaoSelecionada->status === 'concluida') bg-green-100 text-green-800
+                                        @elseif($importacaoSelecionada->status === 'processando') bg-yellow-100 text-yellow-800
+                                        @elseif($importacaoSelecionada->status === 'erro') bg-red-100 text-red-800
+                                        @else bg-gray-100 text-gray-800
+                                        @endif">
+                                        {{ ucfirst($importacaoSelecionada->status) }}
+                                    </span>
+                                </p>
+                                @if($importacaoSelecionada->total_registros)
+                                    <p class="text-blue-700"><strong>Registros Importados:</strong> {{ number_format($importacaoSelecionada->total_registros, 0, ',', '.') }}</p>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            @endif
+            
             <!-- Período -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -139,15 +187,23 @@
 
             <!-- Quantidade de Registros -->
             @if($importacaoId || ($dataInicio && $dataFim))
-                <div class="bg-blue-50 p-4 rounded-lg">
-                    <h3 class="font-semibold text-blue-800 mb-2">Resumo da Exportação</h3>
-                    <div class="text-sm text-blue-700">
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-green-800 mb-2">Resumo da Exportação</h3>
+                    <div class="text-sm text-green-700">
                         <p><strong>Registros que serão exportados:</strong> {{ number_format($this->getQuantidadeRegistros(), 0, ',', '.') }} lançamento(s)</p>
                         @if($importacaoId)
                             @php $importacao = $importacoes->find($importacaoId) @endphp
                             @if($importacao)
                                 <p><strong>Arquivo:</strong> {{ $importacao->nome_arquivo }}</p>
+                                <p><strong>Empresa:</strong> 
+                                    @if($importacao->empresa)
+                                        {{ $importacao->empresa->nome }}
+                                    @else
+                                        <span class="text-gray-500">Não informada</span>
+                                    @endif
+                                </p>
                                 <p><strong>Período:</strong> {{ $importacao->data_inicial }} a {{ $importacao->data_final }}</p>
+                                <p><strong>Data de Importação:</strong> {{ $importacao->created_at->format('d/m/Y H:i') }}</p>
                             @endif
                         @else
                             <p><strong>Período:</strong> {{ $dataInicio }} a {{ $dataFim }}</p>

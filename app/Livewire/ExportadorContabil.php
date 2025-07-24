@@ -32,7 +32,7 @@ class ExportadorContabil extends Component
     {
         $this->dataInicio = now()->startOfMonth()->format('Y-m-d');
         $this->dataFim = now()->endOfMonth()->format('Y-m-d');
-        $this->importacoes = \App\Models\Importacao::orderByDesc('created_at')->get();
+        $this->importacoes = \App\Models\Importacao::with('empresa')->orderByDesc('created_at')->get();
         $this->empresas = \App\Models\Empresa::orderBy('nome')->get();
         
         // Definir usuário padrão como Fabiano
@@ -71,10 +71,13 @@ class ExportadorContabil extends Component
             
             if ($empresa) {
                 $this->codigoEmpresa = $empresa->codigo_sistema ?? '';
-                $this->cnpjEmpresa = $empresa->cnpj ?? '';
+                // Limpar máscara do CNPJ
+                $cnpjLimpo = preg_replace('/[^0-9]/', '', $empresa->cnpj ?? '');
+                $this->cnpjEmpresa = $cnpjLimpo;
                 Log::info("Campos preenchidos", [
                     'codigoEmpresa' => $this->codigoEmpresa,
-                    'cnpjEmpresa' => $this->cnpjEmpresa
+                    'cnpjEmpresa' => $this->cnpjEmpresa,
+                    'cnpj_original' => $empresa->cnpj
                 ]);
             } else {
                 Log::warning("Importação sem empresa associada");
@@ -82,10 +85,13 @@ class ExportadorContabil extends Component
                 $empresa = \App\Models\Empresa::where('codigo_sistema', $importacao->codigo_empresa)->first();
                 if ($empresa) {
                     $this->codigoEmpresa = $empresa->codigo_sistema ?? '';
-                    $this->cnpjEmpresa = $empresa->cnpj ?? '';
+                    // Limpar máscara do CNPJ
+                    $cnpjLimpo = preg_replace('/[^0-9]/', '', $empresa->cnpj ?? '');
+                    $this->cnpjEmpresa = $cnpjLimpo;
                     Log::info("Empresa encontrada pelo código", [
                         'codigoEmpresa' => $this->codigoEmpresa,
-                        'cnpjEmpresa' => $this->cnpjEmpresa
+                        'cnpjEmpresa' => $this->cnpjEmpresa,
+                        'cnpj_original' => $empresa->cnpj
                     ]);
                 } else {
                     // Se não encontrar empresa, usar valores padrão ou deixar vazio
@@ -139,12 +145,15 @@ class ExportadorContabil extends Component
             $empresa = \App\Models\Empresa::find($value);
             if ($empresa) {
                 $this->codigoEmpresa = $empresa->codigo_sistema ?? '';
-                $this->cnpjEmpresa = $empresa->cnpj ?? '';
+                // Limpar máscara do CNPJ ao selecionar empresa
+                $cnpjLimpo = preg_replace('/[^0-9]/', '', $empresa->cnpj ?? '');
+                $this->cnpjEmpresa = $cnpjLimpo;
                 Log::info("Empresa selecionada manualmente", [
                     'empresa_id' => $empresa->id,
                     'empresa_nome' => $empresa->nome,
                     'codigoEmpresa' => $this->codigoEmpresa,
-                    'cnpjEmpresa' => $this->cnpjEmpresa
+                    'cnpjEmpresa' => $this->cnpjEmpresa,
+                    'cnpj_original' => $empresa->cnpj
                 ]);
             } else {
                 Log::warning("Empresa não encontrada", ['empresa_id' => $value]);
@@ -164,6 +173,14 @@ class ExportadorContabil extends Component
             'importacaoId' => $this->importacaoId
         ]);
 
+        // Limpar máscara do CNPJ antes da validação
+        $cnpjLimpo = preg_replace('/[^0-9]/', '', $this->cnpjEmpresa);
+        
+        Log::info('CNPJ processado', [
+            'cnpj_original' => $this->cnpjEmpresa,
+            'cnpj_limpo' => $cnpjLimpo
+        ]);
+
         $regras = [
             'dataInicio' => 'required|date',
             'dataFim' => 'required|date|after_or_equal:dataInicio',
@@ -179,20 +196,35 @@ class ExportadorContabil extends Component
             $regras['sistema'] = 'required|in:0,1,2';
             
             // Verificar se os campos estão vazios e dar dica ao usuário
-            if (empty($this->codigoEmpresa) || empty($this->cnpjEmpresa)) {
+            if (empty($this->codigoEmpresa) || empty($cnpjLimpo)) {
                 Log::warning('Campos obrigatórios do layout Domínio não preenchidos', [
                     'codigoEmpresa' => $this->codigoEmpresa,
                     'cnpjEmpresa' => $this->cnpjEmpresa,
+                    'cnpjLimpo' => $cnpjLimpo,
                     'importacaoId' => $this->importacaoId
                 ]);
             }
         }
 
         try {
-            $this->validate($regras);
+            // Criar dados para validação com CNPJ limpo
+            $dadosValidacao = [
+                'dataInicio' => $this->dataInicio,
+                'dataFim' => $this->dataFim,
+                'formato' => $this->formato,
+                'layoutExport' => $this->layoutExport,
+                'codigoEmpresa' => $this->codigoEmpresa,
+                'cnpjEmpresa' => $cnpjLimpo, // Usar CNPJ limpo
+                'tipoNota' => $this->tipoNota,
+                'sistema' => $this->sistema
+            ];
+            
+            $this->validate($regras, [], $dadosValidacao);
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('Erro de validação na exportação', [
-                'erros' => $e->errors()
+                'erros' => $e->errors(),
+                'cnpj_original' => $this->cnpjEmpresa,
+                'cnpj_limpo' => $cnpjLimpo
             ]);
             
             // Mensagem mais amigável para campos obrigatórios do layout Domínio
@@ -411,7 +443,9 @@ class ExportadorContabil extends Component
         // Registro 01 - Cabeçalho do Arquivo (100 caracteres)
         $registro01 = '01'; // Identificador
         $registro01 .= str_pad($this->codigoEmpresa, 7, '0', STR_PAD_LEFT); // Código da Empresa
-        $registro01 .= str_pad($this->cnpjEmpresa, 14, ' ', STR_PAD_RIGHT); // CNPJ da empresa
+        // Garantir que o CNPJ esteja sem máscara
+        $cnpjLimpo = preg_replace('/[^0-9]/', '', $this->cnpjEmpresa);
+        $registro01 .= str_pad($cnpjLimpo, 14, ' ', STR_PAD_RIGHT); // CNPJ da empresa
         $registro01 .= $this->dataInicio ? date('d/m/Y', strtotime($this->dataInicio)) : str_pad('', 10); // Data Inicial
         $registro01 .= $this->dataFim ? date('d/m/Y', strtotime($this->dataFim)) : str_pad('', 10); // Data Final
         $registro01 .= 'N'; // Valor fixo "N"

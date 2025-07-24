@@ -1,11 +1,28 @@
 FROM laravelsail/php82-composer
 
-# Instalar e habilitar a extensão pdo_mysql
-RUN docker-php-ext-install pdo_mysql && \
-    docker-php-ext-enable pdo_mysql
+# Atualizar pacotes e instalar dependências necessárias
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    python3 \
+    python3-pip \
+    python3-pandas \
+    python3-pypdf2 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Instalar e habilitar a extensão pdo_mysql
-RUN apt-get update && apt-get install -y python3 python3-pip python3-pandas python3-pypdf2
+# Instalar e habilitar extensões PHP necessárias
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
+        pdo_mysql \
+        gd \
+        bcmath \
+        zip \
+    && docker-php-ext-enable \
+        pdo_mysql \
+        gd \
+        bcmath \
+        zip
 
 # Instalar Node.js e npm (LTS)
 RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \

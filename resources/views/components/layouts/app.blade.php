@@ -59,6 +59,7 @@
                                 </button>
                                 <div x-show="open" @click.away="open = false" class="absolute left-0 mt-2 w-56 bg-white border rounded shadow-lg z-50">
                                     <a href="{{ route('importador-avancado') }}" @click="open = false" class="block px-4 py-2 hover:bg-blue-50">📄 Importador</a>
+                                    <a href="{{ route('importador-personalizado') }}" @click="open = false" class="block px-4 py-2 hover:bg-blue-50">🎯 Importador Personalizado</a>
                                     <a href="{{ route('importacoes') }}" @click="open = false" class="block px-4 py-2 hover:bg-blue-50">🕑 Importações anteriores</a>
                                     <a href="{{ route('parametros-extratos') }}" @click="open = false" class="block px-4 py-2 hover:bg-blue-50">📝 Parâmetros de Extrato</a>
                                 </div>

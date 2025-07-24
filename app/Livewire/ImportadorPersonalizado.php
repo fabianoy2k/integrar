@@ -43,11 +43,13 @@ class ImportadorPersonalizado extends Component
 
     // Novas propriedades para regras de amarração
     public $regrasAmarracao = [];
+    public $regrasDisponiveis = [];
+    public $regraSelecionada = null;
+    public $colunasIncompatíveis = null;
     public $regraAtual = [
         'nome_regra' => '',
         'tipo' => 'automatica',
         'coluna_data' => '',
-        'coluna_valor' => '',
         'coluna_descricao' => '',
         'coluna_documento' => '',
         'conta_debito_fixa' => '',
@@ -90,10 +92,23 @@ class ImportadorPersonalizado extends Component
         }
     }
 
+    public function carregarRegrasDisponiveis()
+    {
+        if ($this->empresa_id) {
+            $this->regrasDisponiveis = RegraAmarracaoImportacao::whereHas('layoutImportacao', function($query) {
+                $query->where('empresa_id', $this->empresa_id);
+            })->orderBy('nome_regra')->get();
+        } else {
+            $this->regrasDisponiveis = collect();
+        }
+    }
+
     public function updatedEmpresaId()
     {
         $this->carregarLayoutsDisponiveis();
+        $this->carregarRegrasDisponiveis();
         $this->layoutSelecionado = null; // Resetar layout selecionado
+        $this->regraSelecionada = null; // Resetar regra selecionada
     }
 
     // Métodos para gerenciar regras de amarração
@@ -115,7 +130,6 @@ class ImportadorPersonalizado extends Component
             'nome_regra' => '',
             'tipo' => 'automatica',
             'coluna_data' => '',
-            'coluna_valor' => '',
             'coluna_descricao' => '',
             'coluna_documento' => '',
             'conta_debito_fixa' => '',
@@ -171,6 +185,258 @@ class ImportadorPersonalizado extends Component
             $this->regraAtual['contas_credito'] = array_values($this->regraAtual['contas_credito']);
             $this->regraAtual['historicos'] = array_values($this->regraAtual['historicos']);
         }
+    }
+
+    // Métodos para salvar e selecionar regras
+    public function salvarRegra()
+    {
+        $this->validate([
+            'regraAtual.nome_regra' => 'required|string|max:255',
+            'regraAtual.tipo' => 'required|in:automatica,manual',
+        ]);
+
+        // Criar nova regra
+        $regra = new RegraAmarracaoImportacao();
+        $regra->nome_regra = $this->regraAtual['nome_regra'];
+        $regra->tipo = $this->regraAtual['tipo'];
+        $regra->coluna_data = $this->regraAtual['coluna_data'];
+        $regra->coluna_descricao = $this->regraAtual['coluna_descricao'];
+        $regra->coluna_documento = $this->regraAtual['coluna_documento'];
+        $regra->conta_debito_fixa = $this->regraAtual['conta_debito_fixa'];
+        $regra->conta_credito_fixa = $this->regraAtual['conta_credito_fixa'];
+        $regra->historico_fixo = $this->regraAtual['historico_fixo'];
+        $regra->centro_custo_fixo = $this->regraAtual['centro_custo_fixo'];
+        $regra->colunas_valores = $this->regraAtual['colunas_valores'];
+        $regra->contas_debito = $this->regraAtual['contas_debito'];
+        $regra->contas_credito = $this->regraAtual['contas_credito'];
+        $regra->historicos = $this->regraAtual['historicos'];
+        $regra->ativo = true;
+        $regra->ordem = 1;
+
+        // Associar ao layout se houver um selecionado
+        if ($this->layoutSelecionado) {
+            $regra->layout_importacao_id = $this->layoutSelecionado;
+        }
+
+        $regra->save();
+
+        // Recarregar regras disponíveis
+        $this->carregarRegrasDisponiveis();
+
+        // Resetar regra atual
+        $this->resetarRegraAtual();
+
+        session()->flash('message', 'Regra salva com sucesso!');
+    }
+
+    public function selecionarRegra($regraId)
+    {
+        $regra = RegraAmarracaoImportacao::find($regraId);
+        if ($regra) {
+            $this->regraSelecionada = $regraId;
+            $this->regraAtual = [
+                'nome_regra' => $regra->nome_regra,
+                'tipo' => $regra->tipo,
+                'coluna_data' => $regra->coluna_data,
+                'coluna_descricao' => $regra->coluna_descricao,
+                'coluna_documento' => $regra->coluna_documento,
+                'conta_debito_fixa' => $regra->conta_debito_fixa,
+                'conta_credito_fixa' => $regra->conta_credito_fixa,
+                'historico_fixo' => $regra->historico_fixo,
+                'centro_custo_fixo' => $regra->centro_custo_fixo,
+                'colunas_valores' => $regra->colunas_valores ?? [''],
+                'contas_debito' => $regra->contas_debito ?? [''],
+                'contas_credito' => $regra->contas_credito ?? [''],
+                'historicos' => $regra->historicos ?? [''],
+            ];
+        }
+    }
+
+    public function aplicarRegraSelecionada()
+    {
+        if ($this->regraSelecionada) {
+            $regra = RegraAmarracaoImportacao::find($this->regraSelecionada);
+            if ($regra) {
+                // Verificar compatibilidade das colunas
+                $colunasRegra = $this->extrairColunasDaRegra($regra);
+                $colunasArquivo = $this->colunasArquivo;
+                
+                $colunasCompatíveis = $this->verificarCompatibilidadeColunas($colunasRegra, $colunasArquivo);
+                
+                if ($colunasCompatíveis['total_compativel']) {
+                    // Todas as colunas são compatíveis, aplicar regra normalmente
+                    $this->aplicarRegraCompleta($regra);
+                    session()->flash('message', 'Regra aplicada com sucesso! Todas as colunas são compatíveis.');
+                } else {
+                    // Algumas colunas não são compatíveis, aplicar parcialmente
+                    $this->aplicarRegraParcial($regra, $colunasCompatíveis);
+                    session()->flash('message', 'Regra aplicada parcialmente. Algumas colunas não foram encontradas no arquivo atual. Verifique e ajuste o mapeamento.');
+                }
+            }
+        }
+    }
+
+    private function extrairColunasDaRegra($regra)
+    {
+        $colunas = [];
+        
+        // Colunas básicas
+        if ($regra->coluna_data) $colunas[] = $regra->coluna_data;
+        if ($regra->coluna_descricao) $colunas[] = $regra->coluna_descricao;
+        if ($regra->coluna_documento) $colunas[] = $regra->coluna_documento;
+        
+        // Colunas de valores múltiplos
+        if ($regra->colunas_valores) {
+            foreach ($regra->colunas_valores as $coluna) {
+                if ($coluna) $colunas[] = $coluna;
+            }
+        }
+        
+        return array_unique($colunas);
+    }
+
+    private function verificarCompatibilidadeColunas($colunasRegra, $colunasArquivo)
+    {
+        $resultado = [
+            'total_compativel' => true,
+            'colunas_encontradas' => [],
+            'colunas_nao_encontradas' => [],
+            'sugestoes' => []
+        ];
+        
+        foreach ($colunasRegra as $colunaRegra) {
+            if (in_array($colunaRegra, $colunasArquivo)) {
+                $resultado['colunas_encontradas'][] = $colunaRegra;
+            } else {
+                $resultado['colunas_nao_encontradas'][] = $colunaRegra;
+                $resultado['total_compativel'] = false;
+                
+                // Buscar sugestões similares
+                $sugestao = $this->encontrarColunaSimilar($colunaRegra, $colunasArquivo);
+                if ($sugestao) {
+                    $resultado['sugestoes'][$colunaRegra] = $sugestao;
+                }
+            }
+        }
+        
+        return $resultado;
+    }
+
+    private function encontrarColunaSimilar($colunaRegra, $colunasArquivo)
+    {
+        $colunaRegraLower = strtolower($colunaRegra);
+        
+        // Buscar por correspondência exata (case insensitive)
+        foreach ($colunasArquivo as $colunaArquivo) {
+            if (strtolower($colunaArquivo) === $colunaRegraLower) {
+                return $colunaArquivo;
+            }
+        }
+        
+        // Buscar por correspondência parcial
+        foreach ($colunasArquivo as $colunaArquivo) {
+            $colunaArquivoLower = strtolower($colunaArquivo);
+            
+            // Verificar se uma contém a outra
+            if (strpos($colunaRegraLower, $colunaArquivoLower) !== false || 
+                strpos($colunaArquivoLower, $colunaRegraLower) !== false) {
+                return $colunaArquivo;
+            }
+        }
+        
+        // Buscar por palavras-chave comuns
+        $palavrasChave = ['data', 'valor', 'descricao', 'historico', 'documento', 'conta'];
+        foreach ($palavrasChave as $palavra) {
+            if (strpos($colunaRegraLower, $palavra) !== false) {
+                foreach ($colunasArquivo as $colunaArquivo) {
+                    $colunaArquivoLower = strtolower($colunaArquivo);
+                    if (strpos($colunaArquivoLower, $palavra) !== false) {
+                        return $colunaArquivo;
+                    }
+                }
+            }
+        }
+        
+        return null;
+    }
+
+    private function aplicarRegraCompleta($regra)
+    {
+        // Aplicar mapeamento da regra
+        $this->mapeamentoColunas = $regra->mapeamento_colunas;
+        
+        // Aplicar valores fixos se for regra manual
+        if ($regra->tipo === 'manual') {
+            $this->regraAtual = [
+                'nome_regra' => $regra->nome_regra,
+                'tipo' => $regra->tipo,
+                'coluna_data' => $regra->coluna_data,
+                'coluna_descricao' => $regra->coluna_descricao,
+                'coluna_documento' => $regra->coluna_documento,
+                'conta_debito_fixa' => $regra->conta_debito_fixa,
+                'conta_credito_fixa' => $regra->conta_credito_fixa,
+                'historico_fixo' => $regra->historico_fixo,
+                'centro_custo_fixo' => $regra->centro_custo_fixo,
+                'colunas_valores' => $regra->colunas_valores ?? [''],
+                'contas_debito' => $regra->contas_debito ?? [''],
+                'contas_credito' => $regra->contas_credito ?? [''],
+                'historicos' => $regra->historicos ?? [''],
+            ];
+        }
+    }
+
+    private function aplicarRegraParcial($regra, $colunasCompatíveis)
+    {
+        // Aplicar apenas as colunas que são compatíveis
+        $mapeamentoParcial = [];
+        
+        // Mapear colunas encontradas
+        foreach ($colunasCompatíveis['colunas_encontradas'] as $coluna) {
+            if ($regra->coluna_data === $coluna) {
+                $mapeamentoParcial[$coluna] = 'data';
+            } elseif ($regra->coluna_descricao === $coluna) {
+                $mapeamentoParcial[$coluna] = 'descricao';
+            } elseif ($regra->coluna_documento === $coluna) {
+                $mapeamentoParcial[$coluna] = 'documento';
+            }
+        }
+        
+        $this->mapeamentoColunas = $mapeamentoParcial;
+        
+        // Aplicar valores fixos se for regra manual
+        if ($regra->tipo === 'manual') {
+            $this->regraAtual = [
+                'nome_regra' => $regra->nome_regra,
+                'tipo' => $regra->tipo,
+                'coluna_data' => in_array($regra->coluna_data, $colunasCompatíveis['colunas_encontradas']) ? $regra->coluna_data : '',
+                'coluna_descricao' => in_array($regra->coluna_descricao, $colunasCompatíveis['colunas_encontradas']) ? $regra->coluna_descricao : '',
+                'coluna_documento' => in_array($regra->coluna_documento, $colunasCompatíveis['colunas_encontradas']) ? $regra->coluna_documento : '',
+                'conta_debito_fixa' => $regra->conta_debito_fixa,
+                'conta_credito_fixa' => $regra->conta_credito_fixa,
+                'historico_fixo' => $regra->historico_fixo,
+                'centro_custo_fixo' => $regra->centro_custo_fixo,
+                'colunas_valores' => $this->filtrarColunasValores($regra->colunas_valores ?? [], $colunasCompatíveis),
+                'contas_debito' => $regra->contas_debito ?? [''],
+                'contas_credito' => $regra->contas_credito ?? [''],
+                'historicos' => $regra->historicos ?? [''],
+            ];
+        }
+        
+        // Armazenar informações sobre incompatibilidades para exibição
+        $this->colunasIncompatíveis = $colunasCompatíveis;
+    }
+
+    private function filtrarColunasValores($colunasValores, $colunasCompatíveis)
+    {
+        $colunasFiltradas = [];
+        foreach ($colunasValores as $coluna) {
+            if (in_array($coluna, $colunasCompatíveis['colunas_encontradas'])) {
+                $colunasFiltradas[] = $coluna;
+            } else {
+                $colunasFiltradas[] = ''; // Manter estrutura, mas sem valor
+            }
+        }
+        return $colunasFiltradas;
     }
 
     public function updatedArquivo()
@@ -454,7 +720,6 @@ class ImportadorPersonalizado extends Component
             // Mapeamento automático
             $mapeamentos = [
                 'data' => $regra['coluna_data'],
-                'valor' => $regra['coluna_valor'],
                 'descricao' => $regra['coluna_descricao'],
                 'documento' => $regra['coluna_documento'],
             ];
@@ -492,14 +757,10 @@ class ImportadorPersonalizado extends Component
                 'centro_custo' => $regra['centro_custo_fixo'],
             ];
             
-            // Buscar data e valor das colunas mapeadas
+            // Buscar data das colunas mapeadas
             if ($regra['coluna_data']) {
                 $indice = $this->encontrarIndiceColuna($regra['coluna_data']);
                 $dados['data'] = $indice !== false ? ($linha[$indice] ?? '') : '';
-            }
-            if ($regra['coluna_valor']) {
-                $indice = $this->encontrarIndiceColuna($regra['coluna_valor']);
-                $dados['valor'] = $indice !== false ? ($linha[$indice] ?? '') : '';
             }
         }
         
