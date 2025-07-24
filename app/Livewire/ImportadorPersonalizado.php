@@ -1096,9 +1096,9 @@ class ImportadorPersonalizado extends Component
         // Se só tem vírgula, verificar se é separador decimal ou milhar
         elseif (strpos($valor, ',') !== false) {
             $partes = explode(',', $valor);
-            // Se a parte após a vírgula tem 2 dígitos, é separador decimal
-            if (count($partes) == 2 && strlen($partes[1]) == 2) {
-                // Formato: 5961,29 (vírgula como decimal)
+            // Se tem apenas uma vírgula e a parte após tem 1 ou 2 dígitos, é separador decimal
+            if (count($partes) == 2 && (strlen($partes[1]) == 1 || strlen($partes[1]) == 2)) {
+                // Formato: 5961,29 ou 3875,2 (vírgula como decimal)
                 $valor = str_replace(',', '.', $valor);
                 Log::debug('Formato detectado: brasileiro só com vírgula decimal', ['valor' => $valor]);
             } else {

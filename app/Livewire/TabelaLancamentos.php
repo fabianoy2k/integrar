@@ -32,7 +32,7 @@ class TabelaLancamentos extends Component
     public $contaCreditoMassa = '';
     public $terceiroMassa = '';
     public $historicoMassa = '';
-    public $perPage = 200;
+    public $perPage = 50;
     public $confirmarExclusao = false;
     
     // Edição inline
