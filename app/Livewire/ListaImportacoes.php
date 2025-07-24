@@ -84,7 +84,9 @@ class ListaImportacoes extends Component
 
     public function render()
     {
-        $importacoes = $this->getImportacoesQuery()->paginate(15);
+        $importacoes = $this->getImportacoesQuery()
+            ->withCount('lancamentos') // Adicionar contagem de lançamentos
+            ->paginate(15);
 
         return view('livewire.lista-importacoes', [
             'importacoes' => $importacoes

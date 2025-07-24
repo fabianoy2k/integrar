@@ -19,6 +19,8 @@
             <p class="text-gray-600 mt-1">Gerencie as importações realizadas</p>
         </div>
 
+
+
         <!-- Filtros -->
         <div class="p-6 border-b border-gray-200 bg-gray-50">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -56,7 +58,8 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Arquivo</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registros</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Linhas/Lançamentos</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuário</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
@@ -82,7 +85,21 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $importacao->registros_processados }} / {{ $importacao->total_registros }}
+                                <div class="flex flex-col">
+                                    <span class="font-medium text-blue-600">
+                                        {{ $importacao->lancamentos_count ?? 0 }} lançamentos
+                                    </span>
+                                    <span class="text-xs text-gray-500">
+                                        {{ $importacao->total_registros ?? 0 }} linhas processadas
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                                    {{ $importacao->tipo === 'personalizado' ? 'bg-purple-100 text-purple-800' : 
+                                       ($importacao->tipo === 'avancado' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800') }}">
+                                    {{ ucfirst($importacao->tipo ?? 'padrão') }}
+                                </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ $importacao->created_at->format('d/m/Y H:i') }}
@@ -100,7 +117,7 @@
                                     </button>
                                     <button 
                                         wire:click="excluirImportacao({{ $importacao->id }})"
-                                        wire:confirm="Tem certeza que deseja excluir esta importação? Todos os {{ $importacao->registros_processados }} lançamentos serão removidos permanentemente."
+                                        wire:confirm="Tem certeza que deseja excluir esta importação? Todos os {{ $importacao->lancamentos_count ?? 0 }} lançamentos serão removidos permanentemente."
                                         class="text-red-600 hover:text-red-900"
                                     >
                                         Excluir
@@ -110,7 +127,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                            <td colspan="8" class="px-6 py-4 text-center text-gray-500">
                                 Nenhuma importação encontrada.
                             </td>
                         </tr>

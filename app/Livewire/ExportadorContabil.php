@@ -12,8 +12,8 @@ class ExportadorContabil extends Component
     protected $layout = 'components.layouts.app';
     public $dataInicio = '';
     public $dataFim = '';
-    public $formato = 'csv';
-    public $layoutExport = 'padrao';
+    public $formato = 'txt';
+    public $layoutExport = 'dominio';
     public $codigoEmpresa = '';
     public $cnpjEmpresa = '';
     public $tipoNota = '05'; // 05 - Contabilidade-Lançamentos em lote (padrão)

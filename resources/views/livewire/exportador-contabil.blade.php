@@ -86,12 +86,12 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">Formato do Arquivo</label>
                 <div class="space-y-2">
                     <label class="flex items-center">
-                        <input type="radio" name="formato" wire:model="formato" value="csv" class="mr-2">
-                        <span>CSV (separado por ponto e vírgula)</span>
-                    </label>
-                    <label class="flex items-center">
                         <input type="radio" name="formato" wire:model="formato" value="txt" class="mr-2">
                         <span>TXT (campos posicionais)</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="formato" wire:model="formato" value="csv" class="mr-2">
+                        <span>CSV (separado por ponto e vírgula)</span>
                     </label>
                 </div>
             </div>
@@ -100,6 +100,10 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Layout de Exportação</label>
                 <div class="space-y-2">
+                    <label class="flex items-center">
+                        <input type="radio" name="layoutExport" wire:model="layoutExport" value="dominio" class="mr-2">
+                        <span>Lançamentos Contábeis em Lote (Leiaute <b>Domínio Sistemas</b>)</span>
+                    </label>
                     <label class="flex items-center">
                         <input type="radio" name="layoutExport" wire:model="layoutExport" value="padrao" class="mr-2">
                         <span>Padrão - Uma linha por lançamento</span>
@@ -111,10 +115,6 @@
                     <label class="flex items-center">
                         <input type="radio" name="layoutExport" wire:model="layoutExport" value="simples" class="mr-2">
                         <span>Simples - Apenas data, histórico e valor</span>
-                    </label>
-                    <label class="flex items-center">
-                        <input type="radio" name="layoutExport" wire:model="layoutExport" value="dominio" class="mr-2">
-                        <span>Domínio Sistemas - Layout específico para importação</span>
                     </label>
                 </div>
             </div>
