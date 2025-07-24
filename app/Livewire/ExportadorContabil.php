@@ -46,7 +46,7 @@ class ExportadorContabil extends Component
     public function updatedImportacaoId($value)
     {
         Log::info("=== INÍCIO updatedImportacaoId ===");
-        Log::info("Importação selecionada", ['importacao_id' => $value]);
+        Log::info("Importação selecionada", ['importacao_id' => $value, 'tipo' => gettype($value)]);
         
         if (empty($value)) {
             Log::info("Nenhuma importação selecionada");
@@ -105,9 +105,28 @@ class ExportadorContabil extends Component
                 }
             }
             
-            // Definir datas da importação
-            $this->dataInicio = $importacao->data_inicial ?? $this->dataInicio;
-            $this->dataFim = $importacao->data_final ?? $this->dataFim;
+            // Buscar datas mínima e máxima dos lançamentos vinculados à importação
+            $datas = \App\Models\Lancamento::where('importacao_id', $importacao->id)
+                ->selectRaw('MIN(data) as data_min, MAX(data) as data_max')
+                ->first();
+
+            if ($datas && $datas->data_min && $datas->data_max) {
+                $this->dataInicio = $datas->data_min;
+                $this->dataFim = $datas->data_max;
+                Log::info("Datas sugeridas pelos lançamentos", [
+                    'dataInicio' => $this->dataInicio,
+                    'dataFim' => $this->dataFim
+                ]);
+            } else {
+                // fallback para datas da importação ou padrão
+                $this->dataInicio = $importacao->data_inicial ?? $this->dataInicio;
+                $this->dataFim = $importacao->data_final ?? $this->dataFim;
+            }
+            
+            // Forçar atualização da interface
+            $this->dispatch('$refresh');
+            
+
             
             // Manter valores padrões do layout Domínio
             $this->tipoNota = '05'; // 05 - Contabilidade-Lançamentos em lote
@@ -120,6 +139,20 @@ class ExportadorContabil extends Component
         }
         
         Log::info("=== FIM updatedImportacaoId ===");
+        
+        // Forçar atualização da interface
+        $this->dispatch('$refresh');
+    }
+
+    public function selecionarImportacao($importacaoId)
+    {
+        Log::info("=== INÍCIO selecionarImportacao ===");
+        Log::info("Importação selecionada via método público", ['importacao_id' => $importacaoId]);
+        
+        $this->importacaoId = $importacaoId;
+        $this->updatedImportacaoId($importacaoId);
+        
+        Log::info("=== FIM selecionarImportacao ===");
     }
 
     public function getQuantidadeRegistros()

@@ -12,10 +12,10 @@
             <!-- Seleção de arquivo importado -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Arquivo Importado</label>
-                <select wire:model="importacaoId" class="w-full rounded-md border-gray-300 shadow-sm">
+                <select wire:change="selecionarImportacao($event.target.value)" class="w-full rounded-md border-gray-300 shadow-sm">
                     <option value="">Selecione um arquivo importado (opcional)</option>
                     @foreach($importacoes as $importacao)
-                        <option value="{{ $importacao->id }}">
+                        <option value="{{ $importacao->id }}" {{ $importacaoId == $importacao->id ? 'selected' : '' }}>
                             {{ $importacao->nome_arquivo }} 
                             @if($importacao->empresa)
                                 - {{ $importacao->empresa->nome }}
@@ -73,11 +73,11 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Data Início</label>
-                    <input type="date" wire:model="dataInicio" class="w-full rounded-md border-gray-300 shadow-sm">
+                    <input type="date" wire:model.live="dataInicio" class="w-full rounded-md border-gray-300 shadow-sm">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Data Fim</label>
-                    <input type="date" wire:model="dataFim" class="w-full rounded-md border-gray-300 shadow-sm">
+                    <input type="date" wire:model.live="dataFim" class="w-full rounded-md border-gray-300 shadow-sm">
                 </div>
             </div>
 
@@ -259,3 +259,5 @@
         @endif
     </div>
 </div>
+
+
