@@ -1064,22 +1064,60 @@ class ImportadorPersonalizado extends Component
             return 0.00;
         }
         
+        $valorOriginal = $valor;
+        
         // Remover espaços e caracteres não numéricos exceto vírgula e ponto
+        $valor = trim($valor);
         $valor = preg_replace('/[^\d,.-]/', '', $valor);
         
-        // Se tem vírgula e ponto, assumir que vírgula é separador de milhares
+        // Log para debug
+        Log::debug('Formatando valor', [
+            'original' => $valorOriginal,
+            'limpo' => $valor
+        ]);
+        
+        // Se tem vírgula e ponto, analisar a posição para determinar qual é separador decimal
         if (strpos($valor, ',') !== false && strpos($valor, '.') !== false) {
-            $valor = str_replace(',', '', $valor);
+            $posVirgula = strrpos($valor, ',');
+            $posPonto = strrpos($valor, '.');
+            
+            // Se a vírgula está depois do ponto, ela é o separador decimal
+            if ($posVirgula > $posPonto) {
+                // Formato: 5.961,29 (ponto como milhar, vírgula como decimal)
+                $valor = str_replace('.', '', $valor);
+                $valor = str_replace(',', '.', $valor);
+                Log::debug('Formato detectado: brasileiro com ponto milhar', ['valor' => $valor]);
+            } else {
+                // Formato: 5,961.29 (vírgula como milhar, ponto como decimal)
+                $valor = str_replace(',', '', $valor);
+                Log::debug('Formato detectado: americano com vírgula milhar', ['valor' => $valor]);
+            }
         }
-        // Se só tem vírgula, assumir que é separador decimal (formato brasileiro)
+        // Se só tem vírgula, verificar se é separador decimal ou milhar
         elseif (strpos($valor, ',') !== false) {
-            $valor = str_replace(',', '.', $valor);
+            $partes = explode(',', $valor);
+            // Se a parte após a vírgula tem 2 dígitos, é separador decimal
+            if (count($partes) == 2 && strlen($partes[1]) == 2) {
+                // Formato: 5961,29 (vírgula como decimal)
+                $valor = str_replace(',', '.', $valor);
+                Log::debug('Formato detectado: brasileiro só com vírgula decimal', ['valor' => $valor]);
+            } else {
+                // Formato: 5,961 (vírgula como milhar)
+                $valor = str_replace(',', '', $valor);
+                Log::debug('Formato detectado: americano só com vírgula milhar', ['valor' => $valor]);
+            }
         }
         
         // Converter para float e formatar com 2 casas decimais
         $valor = (float) $valor;
+        $resultado = number_format($valor, 2, '.', '');
         
-        return number_format($valor, 2, '.', '');
+        Log::debug('Valor formatado', [
+            'original' => $valorOriginal,
+            'final' => $resultado
+        ]);
+        
+        return $resultado;
     }
 
     private function formatarData($data)
