@@ -24,7 +24,7 @@ class ExportadorContabil extends Component
     public $quantidadeRegistros = 0;
     public $importacaoId = null;
     public $importacoes = [];
-    public $usuario = 'Fabiano';
+    public $usuario = 'INTEGRAR02';
     public $empresas = [];
     public $empresaSelecionada = null;
 
@@ -36,7 +36,7 @@ class ExportadorContabil extends Component
         $this->empresas = \App\Models\Empresa::orderBy('nome')->get();
         
         // Definir usuário padrão como Fabiano
-        $this->usuario = 'Fabiano';
+        $this->usuario = 'INTEGRAR02';
         
         // Valores padrões para layout Domínio
         $this->tipoNota = '05'; // 05 - Contabilidade-Lançamentos em lote
@@ -464,7 +464,7 @@ class ExportadorContabil extends Component
             $registro02 .= str_pad($sequencial, 7, '0', STR_PAD_LEFT); // Código sequencial
             $registro02 .= 'X'; // Tipo (X=Um débito para um crédito)
             $registro02 .= $lancamento->data ? $lancamento->data->format('d/m/Y') : str_pad('', 10); // Data do lançamento
-            $registro02 .= str_pad('FABIANO', 30, ' ', STR_PAD_RIGHT); // Usuário
+            $registro02 .= str_pad('INTEGRAR02', 30, ' ', STR_PAD_RIGHT); // Usuário
             $registro02 = str_pad($registro02, 100, ' ', STR_PAD_RIGHT); // Completar até 100 caracteres
             $linhas[] = $registro02;
 
