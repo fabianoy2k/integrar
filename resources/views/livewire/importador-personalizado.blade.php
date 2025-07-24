@@ -240,6 +240,7 @@
                     </div>
                     @endif
 
+                    {{-- Funcionalidade temporariamente oculta
                     <div class="bg-blue-50 rounded-lg p-4">
                         <h3 class="text-lg font-semibold mb-4">Regras Automáticas (Opcional)</h3>
                         <div class="space-y-4">
@@ -262,6 +263,7 @@
                             @endif
                         </div>
                     </div>
+                    --}}
 
                     <!-- Regras de Amarração -->
                     <div class="bg-green-50 rounded-lg p-4">
