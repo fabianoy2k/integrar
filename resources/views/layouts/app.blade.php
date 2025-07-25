@@ -17,7 +17,13 @@
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100">
-            @include('layouts.navigation')
+            @php
+            // Usar o controller para obter dados do menu
+            $menuData = \App\Http\Controllers\MenuController::getMenuData();
+            $menuItems = $menuData['menuItems'];
+            $userData = $menuData['userData'];
+        @endphp
+        @include('layouts.navigation', ['menuItems' => $menuItems, 'userData' => $userData])
 
             <!-- Page Heading -->
             @isset($header)
@@ -41,21 +47,6 @@
         </div>
         @livewireScripts
         
-        <script>
-        // Teste de debug para Vue
-        console.log('🔍 Debug Vue - Página carregada');
-        console.log('Vue disponível:', !!window.Vue);
-        console.log('Elemento app:', !!document.getElementById('app'));
-        console.log('Elemento vue-navigation:', !!document.getElementById('vue-navigation'));
-        console.log('Componente navigation:', !!document.querySelector('navigation-component'));
-        
-        // Aguardar um pouco e verificar novamente
-        setTimeout(() => {
-            console.log('🔍 Debug Vue - Verificação tardia');
-            console.log('Vue disponível:', !!window.Vue);
-            console.log('Componente navigation:', !!document.querySelector('navigation-component'));
-            console.log('Indicadores Vue:', document.querySelectorAll('.bg-green-500, .bg-blue-500').length);
-        }, 3000);
-        </script>
+
     </body>
 </html>

@@ -1,4 +1,2 @@
-<!-- Vue Navigation Component -->
-<div id="vue-navigation">
-    <navigation-component></navigation-component>
-</div>
+<!-- Blade Navigation Component -->
+@include('layouts.menu-blade')

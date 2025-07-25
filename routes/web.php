@@ -41,8 +41,10 @@ Route::middleware(['auth'])->group(function () {
 
     // Rota para teste Vue simples
     Route::get('/teste-vue-simples', function () {
-        return view('teste-vue-simples');
-    })->name('teste-vue-simples');
+    return view('teste-vue-simples');
+})->name('teste-vue-simples');
+
+Route::get('/teste-menu-blade', [App\Http\Controllers\TesteMenuController::class, 'index'])->name('teste-menu-blade');
 
     // CRUD Empresas Operadoras (apenas admin)
     Route::get('/empresas-operadoras', App\Livewire\EmpresasOperadorasForm::class)->name('empresas-operadoras');
