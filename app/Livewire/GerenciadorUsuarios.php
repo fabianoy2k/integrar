@@ -19,9 +19,20 @@ class GerenciadorUsuarios extends Component
 
     protected $rules = [
         'name' => 'required|string|max:255',
-        'email' => 'required|email|max:255',
+        'email' => 'required|email|max:255|unique:users,email,' . null,
         'password' => 'nullable|min:6',
         'role' => 'required|in:admin,gerente,operador',
+    ];
+
+    protected $messages = [
+        'name.required' => 'O nome é obrigatório.',
+        'name.max' => 'O nome não pode ter mais de 255 caracteres.',
+        'email.required' => 'O e-mail é obrigatório.',
+        'email.email' => 'Digite um e-mail válido.',
+        'email.unique' => 'Este e-mail já está em uso.',
+        'password.min' => 'A senha deve ter pelo menos 6 caracteres.',
+        'role.required' => 'O nível de acesso é obrigatório.',
+        'role.in' => 'Nível de acesso inválido.',
     ];
 
     public function mount()
@@ -50,22 +61,35 @@ class GerenciadorUsuarios extends Component
 
     public function salvarUsuario()
     {
-        $dados = $this->validate();
+        // Ajustar regra de validação para edição
         if ($this->usuario_id) {
-            $usuario = User::find($this->usuario_id);
-            $usuario->name = $this->name;
-            $usuario->email = $this->email;
-            $usuario->role = $this->role;
-            if ($this->password) {
-                $usuario->password = Hash::make($this->password);
-            }
-            $usuario->save();
-        } else {
-            $dados['password'] = Hash::make($this->password);
-            User::create($dados);
+            $this->rules['email'] = 'required|email|max:255|unique:users,email,' . $this->usuario_id;
         }
-        $this->resetarCampos();
-        $this->carregarUsuarios();
+        
+        $dados = $this->validate();
+        
+        try {
+            if ($this->usuario_id) {
+                $usuario = User::find($this->usuario_id);
+                $usuario->name = $this->name;
+                $usuario->email = $this->email;
+                $usuario->role = $this->role;
+                if ($this->password) {
+                    $usuario->password = Hash::make($this->password);
+                }
+                $usuario->save();
+                session()->flash('message', 'Usuário atualizado com sucesso!');
+            } else {
+                $dados['password'] = Hash::make($this->password);
+                User::create($dados);
+                session()->flash('message', 'Usuário cadastrado com sucesso!');
+            }
+            
+            $this->resetarCampos();
+            $this->carregarUsuarios();
+        } catch (\Exception $e) {
+            session()->flash('error', 'Erro ao salvar usuário: ' . $e->getMessage());
+        }
     }
 
     public function editarUsuario($id)
@@ -79,11 +103,26 @@ class GerenciadorUsuarios extends Component
         $this->modoEdicao = true;
     }
 
+
+
     public function excluirUsuario($id)
     {
-        User::find($id)->delete();
-        $this->resetarCampos();
-        $this->carregarUsuarios();
+        try {
+            $usuario = User::find($id);
+            
+            // Não permitir excluir o próprio usuário
+            if ($usuario->id === Auth::id()) {
+                session()->flash('error', 'Você não pode excluir seu próprio usuário!');
+                return;
+            }
+            
+            $usuario->delete();
+            session()->flash('message', 'Usuário excluído com sucesso!');
+            $this->resetarCampos();
+            $this->carregarUsuarios();
+        } catch (\Exception $e) {
+            session()->flash('error', 'Erro ao excluir usuário: ' . $e->getMessage());
+        }
     }
 
     public function render()

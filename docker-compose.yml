@@ -48,6 +48,7 @@ services:
       MYSQL_DATABASE: integrar
       MYSQL_USER: laravel
       MYSQL_PASSWORD: secret
+      TZ: America/Sao_Paulo
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
@@ -64,6 +65,7 @@ services:
       PMA_PORT: 3306
       PMA_USER: laravel
       PMA_PASSWORD: secret
+      TZ: America/Sao_Paulo
     networks:
       - integrar-net
     depends_on:
