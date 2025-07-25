@@ -30,21 +30,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/home', App\Livewire\Home::class)->name('home');
 
     // Rota de exemplo para navegação Vue
-    Route::get('/vue-navigation-example', function () {
-        return view('vue-navigation-example');
-    })->name('vue-navigation-example');
 
-    // Rota para testar Vue
-    Route::get('/teste-vue', function () {
-        return view('teste-vue');
-    })->name('teste-vue');
-
-    // Rota para teste Vue simples
-    Route::get('/teste-vue-simples', function () {
-    return view('teste-vue-simples');
-})->name('teste-vue-simples');
-
-Route::get('/teste-menu-blade', [App\Http\Controllers\TesteMenuController::class, 'index'])->name('teste-menu-blade');
 
     // CRUD Empresas Operadoras (apenas admin)
     Route::get('/empresas-operadoras', App\Livewire\EmpresasOperadorasForm::class)->name('empresas-operadoras');
@@ -72,9 +58,7 @@ Route::get('/download-arquivo/{arquivo}', function ($arquivo) {
     return response()->download($path);
 })->name('download.arquivo.api');
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -83,3 +67,10 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+// Fallback: redirecionar rotas inexistentes para home (apenas em produção)
+if (app()->environment('production')) {
+    Route::fallback(function () {
+        return redirect()->route('home');
+    });
+}
