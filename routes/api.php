@@ -19,6 +19,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+// Rota para dados do usuário autenticado (compatível com web)
+Route::middleware('auth')->get('/user', function (Request $request) {
+    return $request->user();
+});
+
 // Rotas do Exportador Contábil
 Route::prefix('exportador-contabil')->group(function () {
     Route::get('/importacoes', [ExportadorContabilController::class, 'getImportacoes']);

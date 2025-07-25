@@ -29,6 +29,21 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/extrator-bancario', App\Livewire\ExtratorBancario::class)->name('extrator-bancario');
     Route::get('/home', App\Livewire\Home::class)->name('home');
 
+    // Rota de exemplo para navegação Vue
+    Route::get('/vue-navigation-example', function () {
+        return view('vue-navigation-example');
+    })->name('vue-navigation-example');
+
+    // Rota para testar Vue
+    Route::get('/teste-vue', function () {
+        return view('teste-vue');
+    })->name('teste-vue');
+
+    // Rota para teste Vue simples
+    Route::get('/teste-vue-simples', function () {
+        return view('teste-vue-simples');
+    })->name('teste-vue-simples');
+
     // CRUD Empresas Operadoras (apenas admin)
     Route::get('/empresas-operadoras', App\Livewire\EmpresasOperadorasForm::class)->name('empresas-operadoras');
 });
