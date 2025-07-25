@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>IntegraExpert</title>
@@ -13,7 +13,6 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        @livewireStyles
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100">
@@ -31,14 +30,9 @@
             <!-- Page Content -->
             <main>
                 <div id="app">
-                    @hasSection('content')
-                        @yield('content')
-                    @else
-                        {{ $slot }}
-                    @endif
+                    @yield('content')
                 </div>
             </main>
         </div>
-        @livewireScripts
     </body>
-</html>
+</html> 

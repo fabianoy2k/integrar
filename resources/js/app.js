@@ -1,5 +1,12 @@
 import './bootstrap';
-import Alpine from 'alpinejs';
+import { createApp } from 'vue';
+import ExportadorContabil from './components/ExportadorContabil.vue';
 
-window.Alpine = Alpine;
-Alpine.start();
+// Criar aplicação Vue
+const app = createApp({});
+
+// Registrar componente global
+app.component('exportador-contabil', ExportadorContabil);
+
+// Montar aplicação
+app.mount('#app');

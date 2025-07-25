@@ -12,8 +12,8 @@ class ExportadorContabil extends Component
     protected $layout = 'components.layouts.app';
     public $dataInicio = '';
     public $dataFim = '';
-    public $formato = 'txt';
-    public $layoutExport = 'dominio';
+    public $formato = 'txt'; // Fixar como txt
+    public $layoutExport = 'dominio'; // Fixar como dominio
     public $codigoEmpresa = '';
     public $cnpjEmpresa = '';
     public $tipoNota = '05'; // 05 - Contabilidade-Lançamentos em lote (padrão)
@@ -198,6 +198,10 @@ class ExportadorContabil extends Component
 
     public function exportar()
     {
+        // Forçar sempre txt e dominio
+        $this->formato = 'txt';
+        $this->layoutExport = 'dominio';
+
         Log::info('Iniciando exportação', [
             'dataInicio' => $this->dataInicio,
             'dataFim' => $this->dataFim,

@@ -82,47 +82,15 @@
             </div>
 
             <!-- Formato -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Formato do Arquivo</label>
-                <div class="space-y-2">
-                    <label class="flex items-center">
-                        <input type="radio" name="formato" wire:model="formato" value="txt" class="mr-2">
-                        <span>TXT (campos posicionais)</span>
-                    </label>
-                    <label class="flex items-center">
-                        <input type="radio" name="formato" wire:model="formato" value="csv" class="mr-2">
-                        <span>CSV (separado por ponto e vírgula)</span>
-                    </label>
-                </div>
-            </div>
+            <!-- REMOVIDO: opções de formato -->
 
             <!-- Layout -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Layout de Exportação</label>
-                <div class="space-y-2">
-                    <label class="flex items-center">
-                        <input type="radio" name="layoutExport" wire:model="layoutExport" value="dominio" class="mr-2">
-                        <span>Lançamentos Contábeis em Lote (Leiaute <b>Domínio Sistemas</b>)</span>
-                    </label>
-                    <label class="flex items-center">
-                        <input type="radio" name="layoutExport" wire:model="layoutExport" value="padrao" class="mr-2">
-                        <span>Padrão - Uma linha por lançamento</span>
-                    </label>
-                    <label class="flex items-center">
-                        <input type="radio" name="layoutExport" wire:model="layoutExport" value="contabil" class="mr-2">
-                        <span>Contábil - Linha de débito e crédito separadas</span>
-                    </label>
-                    <label class="flex items-center">
-                        <input type="radio" name="layoutExport" wire:model="layoutExport" value="simples" class="mr-2">
-                        <span>Simples - Apenas data, histórico e valor</span>
-                    </label>
-                </div>
-            </div>
+            <!-- REMOVIDO: opções de layout -->
 
             <!-- Campos específicos para Domínio -->
-            @if($layoutExport === 'dominio')
+            @if(true)
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg">
-                    @if($layoutExport === 'dominio' && (empty($codigoEmpresa) || empty($cnpjEmpresa)))
+                    @if(empty($codigoEmpresa) || empty($cnpjEmpresa))
                         <div class="col-span-2 mb-4 p-3 bg-yellow-100 border border-yellow-400 rounded-lg">
                             <div class="flex">
                                 <div class="flex-shrink-0">
@@ -141,7 +109,6 @@
                                 </div>
                             </div>
                         </div>
-                        
                         <!-- Seleção manual de empresa -->
                         <div class="col-span-2 mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Selecionar Empresa</label>
@@ -213,23 +180,7 @@
             @endif
 
             <!-- Descrição dos Layouts -->
-            <div class="bg-gray-50 p-4 rounded-lg">
-                <h3 class="font-semibold text-gray-800 mb-2">Descrição dos Layouts:</h3>
-                <div class="space-y-2 text-sm text-gray-600">
-                    <div>
-                        <strong>Padrão:</strong> Exporta todos os campos em uma linha por lançamento
-                    </div>
-                    <div>
-                        <strong>Contábil:</strong> Separa débito e crédito em linhas diferentes (padrão contábil)
-                    </div>
-                    <div>
-                        <strong>Simples:</strong> Exporta apenas os campos essenciais para relatórios básicos
-                    </div>
-                    <div>
-                        <strong>Domínio Sistemas:</strong> Layout específico para importação no sistema Domínio, com registros 01, 02, 03 e 99
-                    </div>
-                </div>
-            </div>
+            <!-- REMOVIDO: descrição dos layouts -->
 
             <button 
                 type="button"

@@ -7,14 +7,14 @@
                 <!-- Progress Steps -->
                 <div class="mb-8">
                     <div class="flex items-center justify-center">
-                        <div class="flex items-center">
+                        <div class="flex items-center space-x-16">
                             <div class="flex items-center relative">
                                 <div class="rounded-full transition duration-500 ease-in-out h-12 w-12 py-3 border-2 {{ $step >= 1 ? 'bg-blue-600 border-blue-600' : 'border-gray-300' }} text-white text-center">
                                     <svg class="w-6 h-6 mx-auto" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
                                     </svg>
                                 </div>
-                                <div class="absolute top-0 -ml-10 mt-16 w-20 text-center text-xs font-medium text-gray-500">Upload</div>
+                                <div class="absolute top-0 left-1/2 transform -translate-x-1/2 mt-16 w-20 text-center text-xs font-medium text-gray-500">Upload</div>
                             </div>
                             <div class="flex-auto border-t-2 transition duration-500 ease-in-out {{ $step >= 2 ? 'border-blue-600' : 'border-gray-300' }}"></div>
                             <div class="flex items-center relative">
@@ -23,7 +23,7 @@
                                         <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
                                     </svg>
                                 </div>
-                                <div class="absolute top-0 -ml-10 mt-16 w-20 text-center text-xs font-medium text-gray-500">Mapeamento</div>
+                                <div class="absolute top-0 left-1/2 transform -translate-x-1/2 mt-16 w-20 text-center text-xs font-medium text-gray-500">Mapeamento</div>
                             </div>
                             <div class="flex-auto border-t-2 transition duration-500 ease-in-out {{ $step >= 3 ? 'border-blue-600' : 'border-gray-300' }}"></div>
                             <div class="flex items-center relative">
@@ -32,7 +32,7 @@
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                                     </svg>
                                 </div>
-                                <div class="absolute top-0 -ml-10 mt-16 w-20 text-center text-xs font-medium text-gray-500">Prévia</div>
+                                <div class="absolute top-0 left-1/2 transform -translate-x-1/2 mt-16 w-20 text-center text-xs font-medium text-gray-500">Prévia</div>
                             </div>
                             <div class="flex-auto border-t-2 transition duration-500 ease-in-out {{ $step >= 4 ? 'border-blue-600' : 'border-gray-300' }}"></div>
                             <div class="flex items-center relative">
@@ -41,7 +41,7 @@
                                         <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                                     </svg>
                                 </div>
-                                <div class="absolute top-0 -ml-10 mt-16 w-20 text-center text-xs font-medium text-gray-500">Concluir</div>
+                                <div class="absolute top-0 left-1/2 transform -translate-x-1/2 mt-16 w-20 text-center text-xs font-medium text-gray-500">Concluir</div>
                             </div>
                         </div>
                     </div>
@@ -311,22 +311,26 @@
                                 <!-- Mapeamento Automático -->
                                 <div class="mt-4 grid grid-cols-1 md:grid-cols-1 gap-4">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Coluna Data</label>
-                                        <select wire:model="regrasAmarracao.{{ $indice }}.coluna_data" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                        <label class="block text-sm font-medium text-gray-700">Coluna Data <span class="text-red-500">*</span></label>
+                                        <select wire:model.live="regrasAmarracao.{{ $indice }}.coluna_data" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 {{ empty($regra['coluna_data']) ? 'border-red-300' : '' }}">
                                             <option value="">Selecione</option>
                                             @foreach($colunasArquivo as $coluna)
                                                 <option value="{{ $coluna }}">{{ $coluna }}</option>
                                             @endforeach
                                         </select>
+                                        @if(empty($regra['coluna_data']))
+                                            <p class="mt-1 text-sm text-red-600">Coluna Data é obrigatória</p>
+                                        @endif
                                     </div>
                                 </div>
 
                                 <!-- Múltiplos Valores -->
+                                @if(!empty($regra['coluna_data']) && $regra['coluna_data'] !== '' && strlen($regra['coluna_data']) > 0)
                                 <div class="mt-4">
                                     <div class="flex justify-between items-center mb-2">
                                         <label class="block text-sm font-medium text-gray-700">Múltiplos Valores</label>
                                         <button wire:click="adicionarValorMultiplo({{ $indice }})" type="button" class="text-blue-600 hover:text-blue-800 text-sm">
-                                            + Adicionar Valor
+                                            + Adicionar mais lançamentos por linha
                                         </button>
                                     </div>
                                     @foreach($regra['colunas_valores'] as $valorIndice => $valor)
@@ -362,6 +366,7 @@
                                     </div>
                                     @endforeach
                                 </div>
+                                @endif
                                 @else
                                 <!-- Mapeamento Manual -->
                                 <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -419,22 +424,26 @@
                                 <!-- Mapeamento Automático -->
                                 <div class="mt-4 grid grid-cols-1 md:grid-cols-1 gap-4">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Coluna Data</label>
-                                        <select wire:model="regraAtual.coluna_data" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                        <label class="block text-sm font-medium text-gray-700">Coluna Data <span class="text-red-500">*</span></label>
+                                        <select wire:model.live="regraAtual.coluna_data" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 {{ empty($regraAtual['coluna_data']) ? 'border-red-300' : '' }}">
                                             <option value="">Selecione</option>
                                             @foreach($colunasArquivo as $coluna)
                                                 <option value="{{ $coluna }}">{{ $coluna }}</option>
                                             @endforeach
                                         </select>
+                                        @if(empty($regraAtual['coluna_data']))
+                                            <p class="mt-1 text-sm text-red-600">Coluna Data é obrigatória</p>
+                                        @endif
                                     </div>
                                 </div>
 
                                 <!-- Múltiplos Valores -->
+                                @if(!empty($regraAtual['coluna_data']) && $regraAtual['coluna_data'] !== '' && strlen($regraAtual['coluna_data']) > 0)
                                 <div class="mt-4">
                                     <div class="flex justify-between items-center mb-2">
                                         <label class="block text-sm font-medium text-gray-700">Múltiplos Valores</label>
                                         <button wire:click="adicionarValorMultiplo()" type="button" class="text-blue-600 hover:text-blue-800 text-sm">
-                                            + Adicionar Valor
+                                            + Adicionar mais lançamentos por linha
                                         </button>
                                     </div>
                                     @foreach($regraAtual['colunas_valores'] as $valorIndice => $valor)
@@ -470,6 +479,7 @@
                                     </div>
                                     @endforeach
                                 </div>
+                                @endif
                                 @else
                                 <!-- Mapeamento Manual -->
                                 <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -563,10 +573,10 @@
                     @if(count($dadosPrevia) > 0)
                     <div class="bg-white border rounded-lg overflow-hidden">
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
+                            <table class="w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                                             Identificação
                                         </th>
                                         @if(count($dadosPrevia) > 0)
@@ -574,7 +584,7 @@
                                                 $primeiroItem = is_array($dadosPrevia[0]) && isset($dadosPrevia[0][0]) ? $dadosPrevia[0][0] : $dadosPrevia[0];
                                             @endphp
                                             @foreach(array_keys($primeiroItem) as $campo)
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider {{ $campo === 'valores_multiplos' ? 'w-auto' : ($campo === 'data' ? 'w-20' : 'w-32') }}">
                                                 {{ ucfirst(str_replace('_', ' ', $campo)) }}
                                             </th>
                                             @endforeach
@@ -587,13 +597,43 @@
                                             <!-- Múltiplos lançamentos por linha -->
                                             @foreach($linha as $lancamentoIndex => $lancamento)
                                             <tr class="{{ $lancamentoIndex > 0 ? 'bg-gray-50' : '' }}">
-                                                <td class="px-6 py-2 text-xs text-gray-500 border-l-4 border-blue-500">
-                                                    Linha {{ $linhaIndex + 1 }} - Lançamento {{ $lancamentoIndex + 1 }}
+                                                <td class="px-4 py-3 text-xs text-gray-500 border-l-4 border-blue-500">
+                                                    <div class="font-medium">Linha {{ $linhaIndex + 1 }}</div>
+                                                    <div class="text-gray-400">Lançamento {{ $lancamentoIndex + 1 }}</div>
                                                 </td>
                                                 @foreach($lancamento as $campo => $valor)
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    <div class="text-xs text-gray-500">{{ ucfirst(str_replace('_', ' ', $campo)) }}</div>
-                                                    <div>{{ is_array($valor) ? json_encode($valor) : $valor }}</div>
+                                                <td class="px-4 py-3 text-sm text-gray-900 {{ $campo === 'valores_multiplos' ? 'whitespace-normal' : 'whitespace-nowrap' }}">
+                                                    @if($campo === 'valores_multiplos' && is_array($valor))
+                                                        <div class="space-y-2">
+                                                            @foreach($valor as $index => $item)
+                                                                <div class="bg-blue-50 border border-blue-200 rounded p-2">
+                                                                    <div class="flex items-center gap-4 text-xs">
+                                                                        <div class="font-medium text-blue-800">Lançamento {{ $index + 1 }}</div>
+                                                                        @if(isset($item['valor']))
+                                                                            <div class="font-semibold text-green-700">R$ {{ $item['valor'] }}</div>
+                                                                        @endif
+                                                                        @if(isset($item['conta_debito']))
+                                                                            <div><span class="text-gray-600">Débito:</span> {{ $item['conta_debito'] }}</div>
+                                                                        @endif
+                                                                        @if(isset($item['conta_credito']))
+                                                                            <div><span class="text-gray-600">Crédito:</span> {{ $item['conta_credito'] }}</div>
+                                                                        @endif
+                                                                        @if(isset($item['historico']))
+                                                                            <div class="text-gray-700 truncate flex-1" title="{{ $item['historico'] }}">{{ $item['historico'] }}</div>
+                                                                        @endif
+                                                                    </div>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    @elseif($campo === 'data')
+                                                        <div class="font-medium text-blue-600">{{ $valor }}</div>
+                                                    @elseif($campo === 'valor')
+                                                        <div class="font-medium text-green-600">R$ {{ $valor }}</div>
+                                                    @else
+                                                        <div class="truncate" title="{{ is_array($valor) ? json_encode($valor, JSON_PRETTY_PRINT) : $valor }}">
+                                                            {{ is_array($valor) ? json_encode($valor, JSON_PRETTY_PRINT) : $valor }}
+                                                        </div>
+                                                    @endif
                                                 </td>
                                                 @endforeach
                                             </tr>
@@ -601,10 +641,43 @@
                                         @else
                                             <!-- Lançamento único (estrutura antiga) -->
                                             <tr>
+                                                <td class="px-4 py-3 text-xs text-gray-500 border-l-4 border-blue-500">
+                                                    <div class="font-medium">Linha {{ $linhaIndex + 1 }}</div>
+                                                    <div class="text-gray-400">Lançamento único</div>
+                                                </td>
                                                 @foreach($linha as $campo => $valor)
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    <div class="text-xs text-gray-500">{{ ucfirst(str_replace('_', ' ', $campo)) }}</div>
-                                                    <div>{{ is_array($valor) ? json_encode($valor) : $valor }}</div>
+                                                <td class="px-4 py-3 text-sm text-gray-900 {{ $campo === 'valores_multiplos' ? 'whitespace-normal' : 'whitespace-nowrap' }}">
+                                                    @if($campo === 'valores_multiplos' && is_array($valor))
+                                                        <div class="space-y-2">
+                                                            @foreach($valor as $index => $item)
+                                                                <div class="bg-blue-50 border border-blue-200 rounded p-2">
+                                                                    <div class="flex items-center gap-4 text-xs">
+                                                                        <div class="font-medium text-blue-800">Lançamento {{ $index + 1 }}</div>
+                                                                        @if(isset($item['valor']))
+                                                                            <div class="font-semibold text-green-700">R$ {{ $item['valor'] }}</div>
+                                                                        @endif
+                                                                        @if(isset($item['conta_debito']))
+                                                                            <div><span class="text-gray-600">Débito:</span> {{ $item['conta_debito'] }}</div>
+                                                                        @endif
+                                                                        @if(isset($item['conta_credito']))
+                                                                            <div><span class="text-gray-600">Crédito:</span> {{ $item['conta_credito'] }}</div>
+                                                                        @endif
+                                                                        @if(isset($item['historico']))
+                                                                            <div class="text-gray-700 truncate flex-1" title="{{ $item['historico'] }}">{{ $item['historico'] }}</div>
+                                                                        @endif
+                                                                    </div>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    @elseif($campo === 'data')
+                                                        <div class="font-medium text-blue-600">{{ $valor }}</div>
+                                                    @elseif($campo === 'valor')
+                                                        <div class="font-medium text-green-600">R$ {{ $valor }}</div>
+                                                    @else
+                                                        <div class="truncate" title="{{ is_array($valor) ? json_encode($valor, JSON_PRETTY_PRINT) : $valor }}">
+                                                            {{ is_array($valor) ? json_encode($valor, JSON_PRETTY_PRINT) : $valor }}
+                                                        </div>
+                                                    @endif
                                                 </td>
                                                 @endforeach
                                             </tr>

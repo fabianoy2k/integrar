@@ -44,6 +44,17 @@ Route::get('/download/{arquivo}', function ($arquivo) {
     return response()->download($path);
 })->name('download.arquivo');
 
+// Rota para download de arquivos da API
+Route::get('/download-arquivo/{arquivo}', function ($arquivo) {
+    $path = storage_path("app/exports/{$arquivo}");
+    
+    if (!file_exists($path)) {
+        abort(404, 'Arquivo não encontrado');
+    }
+    
+    return response()->download($path);
+})->name('download.arquivo.api');
+
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
