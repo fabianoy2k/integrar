@@ -8,6 +8,7 @@ services:
     volumes:
       - ./:/var/www/html
       - ./wait-for-it.sh:/wait-for-it.sh
+      - /etc/localtime:/etc/localtime:ro
     working_dir: /var/www/html
     ports:
       - "8081:8000"
@@ -44,12 +45,14 @@ services:
     ports:
       - "3308:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: integrar
-      MYSQL_USER: laravel
-      MYSQL_PASSWORD: secret
+      - TZ=America/Sao_Paulo
+      - MYSQL_ROOT_PASSWORD=senha
+      - MYSQL_DATABASE=integrar
+      - MYSQL_USER=laravel
+      - MYSQL_PASSWORD=secret
     volumes:
       - mysql_data:/var/lib/mysql
+      - /etc/localtime:/etc/localtime:ro
     networks:
       - integrar-net
 
@@ -60,10 +63,13 @@ services:
     ports:
       - "8082:80"
     environment:
-      PMA_HOST: db
-      PMA_PORT: 3306
-      PMA_USER: laravel
-      PMA_PASSWORD: secret
+      - PMA_HOST=db
+      - PMA_PORT=3306
+      - PMA_USER=laravel
+      - PMA_PASSWORD=secret
+      - TZ=America/Sao_Paulo
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
     networks:
       - integrar-net
     depends_on:
