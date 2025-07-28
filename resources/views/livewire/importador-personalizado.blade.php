@@ -169,6 +169,14 @@
                 @endif
                     <div class="bg-gray-50 rounded-lg p-4">
                         <h3 class="text-lg font-semibold mb-4">Configurações do Arquivo</h3>
+                        <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <h4 class="text-sm font-medium text-blue-800 mb-2">Formatação de Valores</h4>
+                            <ul class="text-xs text-blue-700 space-y-1">
+                                <li>• Símbolos de moeda (R$, $, €, £) são automaticamente removidos</li>
+                                <li>• Valores negativos podem ser convertidos para positivos (opcional)</li>
+                                <li>• Suporte a formatos brasileiros (1.234,56) e americanos (1,234.56)</li>
+                            </ul>
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">
@@ -207,6 +215,12 @@
                                 <label class="flex items-center">
                                     <input wire:model="temCabecalho" type="checkbox" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                                     <span class="ml-2 text-sm text-gray-700">Primeira linha é cabeçalho</span>
+                                </label>
+                            </div>
+                            <div>
+                                <label class="flex items-center">
+                                    <input wire:model="converterNegativosParaPositivos" type="checkbox" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                                    <span class="ml-2 text-sm text-gray-700">Converter valores negativos para positivos</span>
                                 </label>
                             </div>
                         </div>

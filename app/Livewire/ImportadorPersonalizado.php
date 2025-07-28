@@ -40,6 +40,7 @@ class ImportadorPersonalizado extends Component
     public $empresa_id = null;
     public $empresas = [];
     public $layoutAtualizado = false;
+    public $converterNegativosParaPositivos = true;
 
     // Novas propriedades para regras de amarração
     public $regrasAmarracao = [];
@@ -1066,8 +1067,16 @@ class ImportadorPersonalizado extends Component
         
         $valorOriginal = $valor;
         
-        // Remover espaços e caracteres não numéricos exceto vírgula e ponto
+        // Remover espaços e caracteres não numéricos exceto vírgula, ponto e hífen
         $valor = trim($valor);
+        
+        // Remover símbolo R$ e outros símbolos de moeda
+        $valor = preg_replace('/R\$\s*/i', '', $valor);
+        $valor = preg_replace('/\$\s*/', '', $valor);
+        $valor = preg_replace('/€\s*/', '', $valor);
+        $valor = preg_replace('/£\s*/', '', $valor);
+        
+        // Remover caracteres não numéricos exceto vírgula, ponto e hífen
         $valor = preg_replace('/[^\d,.-]/', '', $valor);
         
         // Log para debug
@@ -1075,6 +1084,16 @@ class ImportadorPersonalizado extends Component
             'original' => $valorOriginal,
             'limpo' => $valor
         ]);
+        
+        // Verificar se é negativo (tem hífen)
+        $ehNegativo = false;
+        if (strpos($valor, '-') !== false) {
+            $ehNegativo = true;
+            if ($this->converterNegativosParaPositivos) {
+                $valor = str_replace('-', '', $valor);
+                Log::debug('Valor negativo detectado, convertendo para positivo', ['valor' => $valor]);
+            }
+        }
         
         // Se tem vírgula e ponto, analisar a posição para determinar qual é separador decimal
         if (strpos($valor, ',') !== false && strpos($valor, '.') !== false) {
@@ -1114,7 +1133,8 @@ class ImportadorPersonalizado extends Component
         
         Log::debug('Valor formatado', [
             'original' => $valorOriginal,
-            'final' => $resultado
+            'final' => $resultado,
+            'era_negativo' => $ehNegativo
         ]);
         
         return $resultado;
