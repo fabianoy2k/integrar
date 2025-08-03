@@ -751,7 +751,8 @@ def main():
     if len(sys.argv) < 3:
         print("Uso: python conversor_extrato_sicoob_pdf_csv.py <arquivo.pdf> <arquivo_saida.csv>")
         sys.exit(1)
-        caminho_pdf = sys.argv[1]
+    
+    caminho_pdf = sys.argv[1]
     caminho_csv = sys.argv[2]
     debug = "--debug" in sys.argv
     if not os.path.exists(caminho_pdf):
