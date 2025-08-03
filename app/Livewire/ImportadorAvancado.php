@@ -33,7 +33,7 @@ class ImportadorAvancado extends Component
         'arquivo' => 'required|file|mimes:csv,txt,pdf|max:10240', // 10MB
         'empresa_id' => 'required|exists:empresas,id',
         'layout_selecionado' => 'required|in:connectere,dominio,grafeno,sicoob,caixa_federal',
-        'conta_banco' => 'required_if:layout_selecionado,grafeno,caixa_federal',
+        'conta_banco' => 'required_if:layout_selecionado,grafeno,sicoob,caixa_federal',
     ];
 
     public function mount()
@@ -196,8 +196,8 @@ class ImportadorAvancado extends Component
 
     private function executarScriptPython($script, $entrada, $saida)
     {
-        // Se for o script do Grafeno ou Caixa Federal, passar a conta do banco como terceiro parâmetro
-        if (($this->layout_selecionado === 'grafeno' || $this->layout_selecionado === 'caixa_federal') && !empty($this->conta_banco)) {
+        // Se for o script do Grafeno, SICOOB ou Caixa Federal, passar a conta do banco como terceiro parâmetro
+        if (($this->layout_selecionado === 'grafeno' || $this->layout_selecionado === 'sicoob' || $this->layout_selecionado === 'caixa_federal') && !empty($this->conta_banco)) {
             $comando = "python3 /var/www/html/scripts/{$script} \"{$entrada}\" \"{$saida}\" \"{$this->conta_banco}\"";
         } else {
             $comando = "python3 /var/www/html/scripts/{$script} \"{$entrada}\" \"{$saida}\"";
@@ -334,7 +334,8 @@ class ImportadorAvancado extends Component
             $contaCredito = $get('Conta Crédito');
             $valor = $get('Valor do Lançamento');
             $historico = $get('Histórico') ?? $get('Histórico (Complemento)');
-            $codigoFilial = $get('Código da Filial/Matriz');
+            $codigoFilialRaw = $get('Código da Filial/Matriz');
+            $codigoFilial = $codigoFilialRaw ? str_pad($codigoFilialRaw, 7, '0', STR_PAD_LEFT) : str_pad($codigoSistemaEmpresa, 7, '0', STR_PAD_LEFT);
             $nomeEmpresa = $get('Nome da Empresa');
             $numeroNota = $get('Número da Nota');
             
@@ -351,7 +352,7 @@ class ImportadorAvancado extends Component
                 ]);
             }
             
-            if (count($dados) >= 9) {
+            if (count($dados) >= 8) {
                 Log::info("Iniciando processamento completo da linha {$linhaNumero}");
                 
                 // Processar terceiro se existir
@@ -461,7 +462,7 @@ class ImportadorAvancado extends Component
                 if ($linhaNumero <= 5) {
                     Log::warning("Linha {$linhaNumero} ignorada - colunas insuficientes:", [
                         'colunas_encontradas' => count($dados),
-                        'colunas_necessarias' => 9
+                        'colunas_necessarias' => 8
                     ]);
                 }
             }
@@ -535,7 +536,10 @@ class ImportadorAvancado extends Component
         $valor_limpo = str_replace(['R$', ' ', '.'], '', $valor);
         $valor_limpo = str_replace(',', '.', $valor_limpo);
         
-        return (float) $valor_limpo;
+        $valor_float = (float) $valor_limpo;
+        
+        // Converter valor negativo para positivo (valor absoluto)
+        return abs($valor_float);
     }
 
     private function filtrarPadroesIndesejados($palavras, $historico)

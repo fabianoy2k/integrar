@@ -747,13 +747,14 @@ def main():
     """Função principal"""
     print("=== EXTRATOR DE TEXTO PDF ===\n")
     
-    # Padronização: python conversor_extrato_sicoob_pdf_csv.py <entrada.pdf> <saida.csv>
+    # Padronização: python conversor_extrato_sicoob_pdf_csv.py <entrada.pdf> <saida.csv> [conta_banco]
     if len(sys.argv) < 3:
-        print("Uso: python conversor_extrato_sicoob_pdf_csv.py <arquivo.pdf> <arquivo_saida.csv>")
+        print("Uso: python conversor_extrato_sicoob_pdf_csv.py <arquivo.pdf> <arquivo_saida.csv> [conta_banco]")
         sys.exit(1)
     
     caminho_pdf = sys.argv[1]
     caminho_csv = sys.argv[2]
+    conta_banco = sys.argv[3] if len(sys.argv) > 3 else '1.1.1.01'  # Conta padrão se não fornecida
     debug = "--debug" in sys.argv
     if not os.path.exists(caminho_pdf):
         print(f"Erro: O arquivo '{caminho_pdf}' não existe.")
@@ -765,31 +766,61 @@ def main():
     if texto:
         lancamentos_por_data = organizar_lancamentos_por_data(texto)
         lancamentos_processados, saldo_anterior, ultimo_saldo_dia = processar_lancamentos_com_data_valor(lancamentos_por_data)
-        # Padronizar saída para Data;Histórico;Conta Débito;Conta Crédito;Valor
+        # Padronizar saída para o formato esperado pelo importador avançado
         def formatar_valor_brl(valor):
             try:
                 return f"{float(valor):,.2f}".replace('.', 'X').replace(',', '.').replace('X', ',')
             except Exception:
                 return "0,00"
+        
         with open(caminho_csv, 'w', newline='', encoding='utf-8') as csvfile:
             writer = csv.writer(csvfile, delimiter=';')
-            writer.writerow(['Data', 'Histórico', 'Conta Débito', 'Conta Crédito', 'Valor'])
+            # Cabeçalho com todas as colunas esperadas pelo importador avançado
+            writer.writerow([
+                'Data do Lançamento',
+                'Usuário',
+                'Conta Débito',
+                'Conta Crédito', 
+                'Valor do Lançamento',
+                'Histórico',
+                'Código da Filial/Matriz',
+                'Nome da Empresa',
+                'Número da Nota'
+            ])
+            
             for l in lancamentos_processados:
                 data = l['data']
                 valor = l['valor']
                 nome = l.get('pagador_recebedor', '')
+                cnpj_cpf = l.get('cnpj_cpf', '')
+                documento = l.get('documento', '')
+                
+                # Aplicar lógica de contas baseada no valor (igual ao Grafeno)
                 if valor > 0:
+                    # Recebimento (positivo): conta do banco no débito, outra conta vazia
+                    conta_debito = conta_banco
+                    conta_credito = ''
                     historico = f"RCTO REF {nome.upper()}"
                 else:
+                    # Pagamento (negativo): conta do banco no crédito, outra conta vazia
+                    conta_debito = ''
+                    conta_credito = conta_banco
                     historico = f"PGTO REF {nome.upper()}"
-                conta_debito = '1.1.1.01'
-                conta_credito = '2.1.1.01'
+                
+                # Se tem CNPJ/CPF e não está duplicado no nome, adicionar ao histórico
+                if cnpj_cpf and cnpj_cpf not in nome:
+                    historico += f" {cnpj_cpf}"
+                
                 writer.writerow([
-                    data,
-                    historico,
-                    conta_debito,
-                    conta_credito,
-                    formatar_valor_brl(valor)
+                    data,                    # Data do Lançamento
+                    'Sistema',               # Usuário
+                    conta_debito,            # Conta Débito
+                    conta_credito,           # Conta Crédito
+                    formatar_valor_brl(valor), # Valor do Lançamento
+                    historico,               # Histórico
+                    '',                      # Código da Filial/Matriz
+                    nome,                    # Nome da Empresa
+                    documento                # Número da Nota
                 ])
         print(f"CSV padronizado gerado em: {caminho_csv}")
 
