@@ -522,37 +522,65 @@
 
                     <div class="bg-white border rounded-lg p-4">
                         <h3 class="text-lg font-semibold mb-4">Mapeamento de Colunas</h3>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coluna do Arquivo</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Campo do Lançamento</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    @foreach($colunasArquivo as $coluna)
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {{ $coluna }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <select wire:model="mapeamentoColunas.{{ $coluna }}" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                                <option value="">Não mapear</option>
-                                                <option value="data">Data</option>
-                                                <option value="valor">Valor</option>
-                                                <option value="descricao">Descrição</option>
-                                                <option value="conta_debito">Conta Débito</option>
-                                                <option value="conta_credito">Conta Crédito</option>
-                                                <option value="centro_custo">Centro de Custo</option>
-                                                <option value="documento">Documento</option>
-                                                <option value="historico">Histórico</option>
-                                            </select>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                        
+                        <!-- Mapeamento e Prévia Integrados -->
+                        <div class="mt-6">
+                            <h4 class="text-md font-semibold mb-3 text-gray-700">Mapeamento e Prévia do Arquivo</h4>
+                            <div class="overflow-x-auto border rounded-lg">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-100">
+                                        <!-- Cabeçalho com nomes das colunas -->
+                                        <tr>
+                                            @foreach($colunasArquivo as $coluna)
+                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider min-w-[120px]">
+                                                {{ $coluna }}
+                                            </th>
+                                            @endforeach
+                                        </tr>
+                                        <!-- Linha de mapeamento -->
+                                        <tr class="bg-blue-50 border-t-2 border-blue-200">
+                                            @foreach($colunasArquivo as $coluna)
+                                            <td class="px-3 py-2 text-center border-r border-gray-200">
+                                                <select wire:model="mapeamentoColunas.{{ $coluna }}" class="block w-full border-blue-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xs bg-white">
+                                                    <option value="">Não mapear</option>
+                                                    <option value="data">Data</option>
+                                                    <option value="valor">Valor</option>
+                                                    <option value="descricao">Descrição</option>
+                                                    <option value="conta_debito">Conta Débito</option>
+                                                    <option value="conta_credito">Conta Crédito</option>
+                                                    <option value="centro_custo">Centro de Custo</option>
+                                                    <option value="documento">Documento</option>
+                                                    <option value="historico">Histórico</option>
+                                                </select>
+                                            </td>
+                                            @endforeach
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        @if(isset($dadosPrevia) && count($dadosPrevia) > 0)
+                                            @foreach(array_slice($dadosPrevia, 0, 10) as $linhaIndex => $linha)
+                                            <tr class="{{ $linhaIndex % 2 == 0 ? 'bg-white' : 'bg-gray-50' }}">
+                                                @foreach($colunasArquivo as $colunaIndex => $coluna)
+                                                <td class="px-3 py-2 text-xs text-gray-900 border-r border-gray-200">
+                                                    @if(isset($linha[$colunaIndex]))
+                                                        {{ is_string($linha[$colunaIndex]) ? Str::limit($linha[$colunaIndex], 30) : $linha[$colunaIndex] }}
+                                                    @else
+                                                        <span class="text-gray-400">-</span>
+                                                    @endif
+                                                </td>
+                                                @endforeach
+                                            </tr>
+                                            @endforeach
+                                        @else
+                                            <tr>
+                                                <td colspan="{{ count($colunasArquivo) }}" class="px-3 py-4 text-center text-sm text-gray-500">
+                                                    Clique em "Gerar Prévia" para visualizar os dados
+                                                </td>
+                                            </tr>
+                                        @endif
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 

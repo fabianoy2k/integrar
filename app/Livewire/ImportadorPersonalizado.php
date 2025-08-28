@@ -15,9 +15,7 @@ use Livewire\Attributes\Rule;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use App\Services\ConversorExcelService;
 
 class ImportadorPersonalizado extends Component
 {
@@ -508,8 +506,7 @@ class ImportadorPersonalizado extends Component
     {
         $handle = fopen($this->arquivo->getRealPath(), 'r');
         $cabecalho = fgetcsv($handle, 0, $this->delimitador);
-        fclose($handle);
-
+        
         Log::info('Cabeçalho lido do CSV:', ['cabecalho' => $cabecalho, 'tem_cabecalho' => $this->temCabecalho]);
 
         if ($this->temCabecalho && $cabecalho) {
@@ -521,20 +518,83 @@ class ImportadorPersonalizado extends Component
             }, range(0, count($cabecalho) - 1));
         }
 
+        // Carregar prévia automática de 10 linhas
+        $this->carregarPreviaAutomaticaCsv($handle);
+
+        fclose($handle);
         Log::info('Colunas do arquivo definidas:', ['colunas' => $this->colunasArquivo]);
         $this->step = 2;
     }
 
     public function lerCabecalhoExcel()
     {
-        $spreadsheet = IOFactory::load($this->arquivo->getRealPath());
+        try {
+            // Usar o conversor Python para detectar tipos e converter para CSV
+            $conversor = new ConversorExcelService();
+            
+            // Criar arquivo temporário para detecção
+            $arquivoTemp = storage_path("app/temp/detectar_cabecalho_" . time() . ".csv");
+            
+            $resultado = $conversor->converterExcelParaCsv(
+                $this->arquivo->getRealPath(),
+                $this->delimitador
+            );
+            
+            if ($resultado['sucesso']) {
+                // Ler o cabeçalho do CSV convertido
+                $handle = fopen($resultado['arquivo_csv'], 'r');
+                $cabecalho = fgetcsv($handle, 0, $this->delimitador);
+                fclose($handle);
+                
+                if ($this->temCabecalho && $cabecalho) {
+                    $this->colunasArquivo = array_map('trim', $cabecalho);
+                } else {
+                    // Se não tem cabeçalho, criar nomes automáticos
+                    $this->colunasArquivo = array_map(function($i) {
+                        return "Coluna " . ($i + 1);
+                    }, range(0, count($cabecalho) - 1));
+                }
+                
+                // Carregar prévia automática do CSV convertido
+                $this->carregarPreviaAutomaticaCsvConvertido($resultado['arquivo_csv']);
+                
+                // Limpar arquivo temporário
+                if (file_exists($resultado['arquivo_csv'])) {
+                    unlink($resultado['arquivo_csv']);
+                }
+                
+                Log::info('Cabeçalho lido do Excel via Python:', [
+                    'cabecalho' => $this->colunasArquivo,
+                    'tipos_detectados' => $resultado['tipos_detectados']
+                ]);
+            } else {
+                // Fallback para o método antigo se Python falhar
+                Log::warning('Conversor Python falhou, usando fallback PhpSpreadsheet');
+                $this->lerCabecalhoExcelFallback();
+                return;
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Erro ao usar conversor Python:', ['erro' => $e->getMessage()]);
+            // Fallback para o método antigo
+            $this->lerCabecalhoExcelFallback();
+            return;
+        }
+        
+        $this->step = 2;
+    }
+    
+    private function lerCabecalhoExcelFallback()
+    {
+        // Método antigo usando PhpSpreadsheet como fallback
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($this->arquivo->getRealPath());
         $worksheet = $spreadsheet->getActiveSheet();
         $highestColumn = $worksheet->getHighestColumn();
         $highestColumnIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColumn);
 
         $colunas = [];
         for ($col = 1; $col <= $highestColumnIndex; $col++) {
-            $cellValue = $worksheet->getCellByColumnAndRow($col, 1)->getValue();
+            $cellValue = $worksheet->getCell(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col) . '1')->getValue();
             
             if ($this->temCabecalho && $cellValue) {
                 $colunas[] = trim($cellValue);
@@ -544,7 +604,32 @@ class ImportadorPersonalizado extends Component
         }
 
         $this->colunasArquivo = $colunas;
-        $this->step = 2;
+        
+        // Carregar prévia automática de 10 linhas
+        $this->carregarPreviaAutomaticaExcel($worksheet);
+    }
+    
+    private function carregarPreviaAutomaticaCsvConvertido($arquivoCsv)
+    {
+        $this->dadosPrevia = [];
+        $this->totalLinhas = 0;
+        
+        $handle = fopen($arquivoCsv, 'r');
+        $linhaNumero = 0;
+        $maxLinhas = 10;
+        
+        while (($linha = fgetcsv($handle, 0, $this->delimitador)) !== false && $linhaNumero < $maxLinhas) {
+            if ($linhaNumero === 0 && $this->temCabecalho) {
+                $linhaNumero++;
+                continue; // Pular cabeçalho
+            }
+            
+            $this->totalLinhas++;
+            $this->dadosPrevia[] = $linha;
+            $linhaNumero++;
+        }
+        
+        fclose($handle);
     }
 
     public function carregarLayout($layoutId)
@@ -562,6 +647,125 @@ class ImportadorPersonalizado extends Component
         $this->mapeamentoColunas = $layout->getMapeamentoColunas();
 
         $this->step = 2;
+    }
+
+    private function carregarPreviaAutomaticaCsv($handle)
+    {
+        $this->dadosPrevia = [];
+        $this->totalLinhas = 0;
+        
+        // Voltar ao início do arquivo se necessário
+        rewind($handle);
+        
+        $linhaNumero = 0;
+        $maxLinhas = 10;
+        
+        while (($linha = fgetcsv($handle, 0, $this->delimitador)) !== false && $linhaNumero < $maxLinhas) {
+            if ($linhaNumero === 0 && $this->temCabecalho) {
+                $linhaNumero++;
+                continue; // Pular cabeçalho
+            }
+            
+            $this->totalLinhas++;
+            $this->dadosPrevia[] = $linha;
+            $linhaNumero++;
+        }
+    }
+
+    private function carregarPreviaAutomaticaExcel($worksheet)
+    {
+        $this->dadosPrevia = [];
+        $this->totalLinhas = 0;
+        
+        $highestRow = $worksheet->getHighestRow();
+        $maxLinhas = 10;
+        $linhaInicial = $this->temCabecalho ? 2 : 1;
+        
+        for ($row = $linhaInicial; $row <= min($highestRow, $linhaInicial + $maxLinhas - 1); $row++) {
+            $linha = [];
+            $highestColumn = $worksheet->getHighestColumn();
+            $highestColumnIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColumn);
+
+            for ($col = 1; $col <= $highestColumnIndex; $col++) {
+                $cell = $worksheet->getCell(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col) . $row);
+                $valor = $cell->getValue();
+                
+                // Converter datas do Excel se necessário
+                if ($this->ehDataExcel($valor)) {
+                    $valor = $this->converterDataExcel($valor);
+                }
+                
+                $linha[] = $valor;
+            }
+
+            $this->totalLinhas++;
+            $this->dadosPrevia[] = $linha;
+        }
+    }
+
+    private function ehDataExcel($valor, $colunaIndex = null)
+    {
+        // Verificar se é um número que pode ser uma data do Excel
+        if (is_numeric($valor) && $valor > 1 && $valor < 100000) {
+            try {
+                // Verificar se está no intervalo típico de datas do Excel (1900-2100)
+                $dataTeste = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($valor);
+                $ano = (int)$dataTeste->format('Y');
+                
+                // Verificar se o ano está em um intervalo razoável para datas
+                if ($ano >= 1900 && $ano <= 2100) {
+                    // Verificar se o valor não é um código ou número de documento
+                    // Datas típicas do Excel são entre 1 e 100000
+                    // Mas vamos ser mais restritivos para evitar falsos positivos
+                    
+                    // Se o valor for muito alto, provavelmente não é uma data
+                    if ($valor > 50000) {
+                        return false;
+                    }
+                    
+                    // Verificar se o mês e dia são válidos
+                    $mes = (int)$dataTeste->format('m');
+                    $dia = (int)$dataTeste->format('d');
+                    
+                    if ($mes >= 1 && $mes <= 12 && $dia >= 1 && $dia <= 31) {
+                        // Verificação adicional: se temos o nome da coluna, verificar se parece ser uma data
+                        if ($colunaIndex !== null && isset($this->colunasArquivo[$colunaIndex - 1])) {
+                            $nomeColuna = strtolower($this->colunasArquivo[$colunaIndex - 1]);
+                            
+                            // Palavras-chave que indicam que é uma data
+                            $palavrasData = ['data', 'date', 'dt_', 'emissao', 'recebimento', 'validade', 'quitacao', 'liberacao', 'vencimento', 'compensacao', 'aprovacao'];
+                            
+                            $ehColunaData = false;
+                            foreach ($palavrasData as $palavra) {
+                                if (strpos($nomeColuna, $palavra) !== false) {
+                                    $ehColunaData = true;
+                                    break;
+                                }
+                            }
+                            
+                            // Só converter se for uma coluna que parece ser de data
+                            return $ehColunaData;
+                        }
+                        
+                        // Se não temos o nome da coluna, ser mais conservador
+                        return false;
+                    }
+                }
+            } catch (\Exception $e) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private function converterDataExcel($valor)
+    {
+        try {
+            $data = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($valor);
+            return $data->format('d/m/Y');
+        } catch (\Exception $e) {
+            return $valor; // Retorna o valor original se não conseguir converter
+        }
     }
 
     public function avancarParaPrevia()
@@ -616,7 +820,45 @@ class ImportadorPersonalizado extends Component
 
     public function gerarPreviaExcel()
     {
-        $spreadsheet = IOFactory::load($this->arquivo->getRealPath());
+        try {
+            // Usar o conversor Python para gerar prévia
+            $conversor = new ConversorExcelService();
+            
+            $resultado = $conversor->converterExcelParaCsv(
+                $this->arquivo->getRealPath(),
+                $this->delimitador
+            );
+            
+            if ($resultado['sucesso']) {
+                // Ler prévia do CSV convertido
+                $this->gerarPreviaCsvConvertido($resultado['arquivo_csv']);
+                
+                // Limpar arquivo temporário
+                if (file_exists($resultado['arquivo_csv'])) {
+                    unlink($resultado['arquivo_csv']);
+                }
+                
+                Log::info('Prévia gerada via Python:', [
+                    'total_linhas' => $this->totalLinhas,
+                    'tipos_detectados' => $resultado['tipos_detectados']
+                ]);
+            } else {
+                // Fallback para o método antigo se Python falhar
+                Log::warning('Conversor Python falhou na prévia, usando fallback PhpSpreadsheet');
+                $this->gerarPreviaExcelFallback();
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Erro ao usar conversor Python para prévia:', ['erro' => $e->getMessage()]);
+            // Fallback para o método antigo
+            $this->gerarPreviaExcelFallback();
+        }
+    }
+    
+    private function gerarPreviaExcelFallback()
+    {
+        // Método antigo usando PhpSpreadsheet como fallback
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($this->arquivo->getRealPath());
         $worksheet = $spreadsheet->getActiveSheet();
         $highestRow = $worksheet->getHighestRow();
         $maxLinhas = 10;
@@ -629,13 +871,45 @@ class ImportadorPersonalizado extends Component
             $highestColumnIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColumn);
 
             for ($col = 1; $col <= $highestColumnIndex; $col++) {
-                $linha[] = $worksheet->getCellByColumnAndRow($col, $row)->getValue();
+                $cell = $worksheet->getCell(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col) . $row);
+                $valor = $cell->getValue();
+                
+                // Converter datas do Excel se necessário
+                if ($this->ehDataExcel($valor)) {
+                    $valor = $this->converterDataExcel($valor);
+                }
+                
+                $linha[] = $valor;
             }
 
             $this->totalLinhas++;
             $dadosProcessados = $this->processarLinha($linha);
             $this->dadosPrevia[] = $dadosProcessados;
         }
+    }
+    
+    private function gerarPreviaCsvConvertido($arquivoCsv)
+    {
+        $handle = fopen($arquivoCsv, 'r');
+        $linhaNumero = 0;
+        $maxLinhas = 10;
+
+        while (($linha = fgetcsv($handle, 0, $this->delimitador)) !== false) {
+            $linhaNumero++;
+            
+            if ($linhaNumero === 1 && $this->temCabecalho) {
+                continue; // Pular cabeçalho
+            }
+
+            $this->totalLinhas++;
+            
+            if ($this->totalLinhas <= $maxLinhas) {
+                $dadosProcessados = $this->processarLinha($linha);
+                $this->dadosPrevia[] = $dadosProcessados;
+            }
+        }
+
+        fclose($handle);
     }
 
     public function processarLinha($linha)
@@ -857,7 +1131,7 @@ class ImportadorPersonalizado extends Component
 
     public function aplicarRegrasDescricao($descricao)
     {
-        $empresaId = auth()->user()?->empresa_id ?? 1;
+        $empresaId = auth()->user() ? auth()->user()->empresa_id : 1;
         $regras = RegraAmarracaoDescricao::where('empresa_id', $empresaId)
             ->where('ativo', true)
             ->orderBy('prioridade', 'desc')
@@ -882,7 +1156,7 @@ class ImportadorPersonalizado extends Component
             'nome_arquivo' => $this->arquivo->getClientOriginalName(),
             'nome' => $this->nomeLayout,
             'tipo' => 'personalizado',
-            'empresa_id' => $this->empresa_id ?? auth()->user()?->empresa_id ?? 1,
+            'empresa_id' => $this->empresa_id ?? (auth()->user() ? auth()->user()->empresa_id : 1),
             'user_id' => auth()->id(),
             'status' => 'processando',
         ]);
@@ -987,7 +1261,47 @@ class ImportadorPersonalizado extends Component
 
     public function processarExcelCompleto($importacao)
     {
-        $spreadsheet = IOFactory::load($this->arquivo->getRealPath());
+        try {
+            // Usar o conversor Python para processar arquivo completo
+            $conversor = new ConversorExcelService();
+            
+            $resultado = $conversor->converterExcelParaCsv(
+                $this->arquivo->getRealPath(),
+                $this->delimitador
+            );
+            
+            if ($resultado['sucesso']) {
+                // Processar CSV convertido
+                $linhasProcessadas = $this->processarCsvConvertido($resultado['arquivo_csv'], $importacao);
+                
+                // Limpar arquivo temporário
+                if (file_exists($resultado['arquivo_csv'])) {
+                    unlink($resultado['arquivo_csv']);
+                }
+                
+                Log::info('Arquivo Excel processado via Python:', [
+                    'total_linhas' => $linhasProcessadas,
+                    'tipos_detectados' => $resultado['tipos_detectados']
+                ]);
+                
+                return $linhasProcessadas;
+            } else {
+                // Fallback para o método antigo se Python falhar
+                Log::warning('Conversor Python falhou no processamento completo, usando fallback PhpSpreadsheet');
+                return $this->processarExcelCompletoFallback($importacao);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Erro ao usar conversor Python para processamento completo:', ['erro' => $e->getMessage()]);
+            // Fallback para o método antigo
+            return $this->processarExcelCompletoFallback($importacao);
+        }
+    }
+    
+    private function processarExcelCompletoFallback($importacao)
+    {
+        // Método antigo usando PhpSpreadsheet como fallback
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($this->arquivo->getRealPath());
         $worksheet = $spreadsheet->getActiveSheet();
         $highestRow = $worksheet->getHighestRow();
         $linhasProcessadas = 0;
@@ -1000,7 +1314,7 @@ class ImportadorPersonalizado extends Component
             $highestColumnIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColumn);
 
             for ($col = 1; $col <= $highestColumnIndex; $col++) {
-                $linha[] = $worksheet->getCellByColumnAndRow($col, $row)->getValue();
+                $linha[] = $worksheet->getCell(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col) . $row)->getValue();
             }
 
             $resultados = $this->processarLinha($linha);
@@ -1010,6 +1324,30 @@ class ImportadorPersonalizado extends Component
             $linhasProcessadas++;
         }
 
+        return $linhasProcessadas;
+    }
+    
+    private function processarCsvConvertido($arquivoCsv, $importacao)
+    {
+        $handle = fopen($arquivoCsv, 'r');
+        $linhaNumero = 0;
+        $linhasProcessadas = 0;
+
+        while (($linha = fgetcsv($handle, 0, $this->delimitador)) !== false) {
+            $linhaNumero++;
+            
+            if ($linhaNumero === 1 && $this->temCabecalho) {
+                continue;
+            }
+
+            $resultados = $this->processarLinha($linha);
+            foreach ($resultados as $dados) {
+                $this->criarLancamento($dados, $importacao);
+            }
+            $linhasProcessadas++;
+        }
+
+        fclose($handle);
         return $linhasProcessadas;
     }
 
