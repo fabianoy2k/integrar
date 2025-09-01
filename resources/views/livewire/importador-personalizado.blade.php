@@ -2,10 +2,27 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6 text-gray-900">
-                <h2 class="text-2xl font-bold mb-6">Importação Personalizada</h2>
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold">Importação Personalizada</h2>
+                    @if($processando)
+                        <div class="flex items-center text-blue-600">
+                            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
+                            <span class="text-sm font-medium">Processando arquivo...</span>
+                        </div>
+                    @endif
+                </div>
 
                 <!-- Progress Steps -->
                 <div class="mb-8">
+                    @if($processando)
+                    <div class="text-center mb-4">
+                        <div class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full">
+                            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                            <span class="text-sm font-medium">Processando arquivo...</span>
+                        </div>
+                    </div>
+                    @endif
+                    
                     <div class="flex items-center justify-center">
                         <div class="flex items-center space-x-16">
                             <div class="flex items-center relative">
@@ -50,6 +67,43 @@
                 <!-- Step 1: Upload -->
                 @if($step == 1)
                 <div class="space-y-6">
+                                    @if($processando)
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-600 mr-3"></div>
+                        <div>
+                            <h3 class="text-sm font-medium text-yellow-800">Processando arquivo...</h3>
+                            <p class="text-sm text-yellow-700">Aguarde enquanto analisamos a estrutura do arquivo</p>
+                        </div>
+                    </div>
+                </div>
+                @endif
+                
+                <div wire:ignore.self>
+                    <div x-data="{ 
+                        processando: @entangle('processando'),
+                        mensagem: 'Analisando estrutura do arquivo...'
+                    }" 
+                    x-init="
+                        Livewire.on('previa-carregada', () => {
+                            mensagem = 'Prévia carregada com sucesso!';
+                            setTimeout(() => {
+                                processando = false;
+                            }, 1000);
+                        });
+                    ">
+                        <div x-show="processando" class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <div class="flex items-center">
+                                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-3"></div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-blue-800">Carregando prévia...</h3>
+                                    <p class="text-sm text-blue-700" x-text="mensagem"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                    
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <h3 class="text-lg font-semibold text-blue-800 mb-2">Layouts Disponíveis</h3>
                         @if($empresa_id)
@@ -76,10 +130,17 @@
                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                         <div class="mt-4">
-                            <label for="arquivo" class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200">
-                                Selecionar Arquivo
-                            </label>
-                            <input wire:model="arquivo" type="file" id="arquivo" class="hidden" accept=".csv,.xls,.xlsx">
+                            @if($processando)
+                                <button disabled class="bg-blue-400 cursor-not-allowed text-white font-medium py-2 px-4 rounded-md flex items-center mx-auto">
+                                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Processando...
+                                </button>
+                            @else
+                                <label for="arquivo" class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200">
+                                    Selecionar Arquivo
+                                </label>
+                                <input wire:model="arquivo" type="file" id="arquivo" class="hidden" accept=".csv,.xls,.xlsx">
+                            @endif
                         </div>
                         <p class="mt-2 text-sm text-gray-600">
                             CSV, XLS ou XLSX (máx. 10MB)
@@ -88,20 +149,35 @@
                     </div>
 
                     @if($arquivo)
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <div class="flex items-center">
-                            <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                            </svg>
-                            <div class="ml-3">
-                                <h3 class="text-sm font-medium text-green-800">Arquivo selecionado</h3>
-                                <div class="mt-2 text-sm text-green-700">
-                                    <p>{{ $arquivo->getClientOriginalName() }}</p>
-                                    <p>Tamanho: {{ number_format($arquivo->getSize() / 1024, 2) }} KB</p>
+                        @if($processando)
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-blue-800">Processando arquivo...</h3>
+                                    <div class="mt-2 text-sm text-blue-700">
+                                        <p>Analisando estrutura e detectando colunas...</p>
+                                        <p class="text-xs text-blue-600">Por favor, aguarde...</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                        @else
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-green-800">Arquivo selecionado</h3>
+                                    <div class="mt-2 text-sm text-green-700">
+                                        <p>{{ $arquivo->getClientOriginalName() }}</p>
+                                        <p>Tamanho: {{ number_format($arquivo->getSize() / 1024, 2) }} KB</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                     @endif
                 </div>
                 @endif

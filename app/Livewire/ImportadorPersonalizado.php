@@ -64,6 +64,7 @@ class ImportadorPersonalizado extends Component
     public $step = 1; // 1: upload, 2: mapeamento, 3: previa, 4: confirmacao
     public $totalLinhas = 0;
     public $linhasProcessadas = 0;
+    public $processando = false; // Controla o estado de processamento
 
     protected $listeners = ['atualizarPrevia'];
 
@@ -447,6 +448,8 @@ class ImportadorPersonalizado extends Component
 
     public function processarArquivo()
     {
+        $this->processando = true; // Ativar indicador de processamento
+        
         $this->step = 1;
         $this->colunasArquivo = [];
         $this->mapeamentoColunas = [];
@@ -466,6 +469,8 @@ class ImportadorPersonalizado extends Component
 
         // Ler cabeçalho do arquivo
         $this->lerCabecalho();
+        
+        $this->processando = false; // Desativar indicador de processamento
     }
 
     public function detectarDelimitador()
@@ -504,31 +509,39 @@ class ImportadorPersonalizado extends Component
 
     public function lerCabecalhoCsv()
     {
-        $handle = fopen($this->arquivo->getRealPath(), 'r');
-        $cabecalho = fgetcsv($handle, 0, $this->delimitador);
+        $this->processando = true; // Ativar indicador de processamento
         
-        Log::info('Cabeçalho lido do CSV:', ['cabecalho' => $cabecalho, 'tem_cabecalho' => $this->temCabecalho]);
+        try {
+            $handle = fopen($this->arquivo->getRealPath(), 'r');
+            $cabecalho = fgetcsv($handle, 0, $this->delimitador);
+            
+            Log::info('Cabeçalho lido do CSV:', ['cabecalho' => $cabecalho, 'tem_cabecalho' => $this->temCabecalho]);
 
-        if ($this->temCabecalho && $cabecalho) {
-            $this->colunasArquivo = array_map('trim', $cabecalho);
-        } else {
-            // Se não tem cabeçalho, criar nomes automáticos
-            $this->colunasArquivo = array_map(function($i) {
-                return "Coluna " . ($i + 1);
-            }, range(0, count($cabecalho) - 1));
+            if ($this->temCabecalho && $cabecalho) {
+                $this->colunasArquivo = array_map('trim', $cabecalho);
+            } else {
+                // Se não tem cabeçalho, criar nomes automáticos
+                $this->colunasArquivo = array_map(function($i) {
+                    return "Coluna " . ($i + 1);
+                }, range(0, count($cabecalho) - 1));
+            }
+
+            // Carregar prévia automática de 10 linhas
+            $this->carregarPreviaAutomaticaCsv($handle);
+
+            fclose($handle);
+            Log::info('Colunas do arquivo definidas:', ['colunas' => $this->colunasArquivo]);
+            $this->step = 2;
+        } finally {
+            $this->processando = false; // Desativar indicador de processamento
         }
-
-        // Carregar prévia automática de 10 linhas
-        $this->carregarPreviaAutomaticaCsv($handle);
-
-        fclose($handle);
-        Log::info('Colunas do arquivo definidas:', ['colunas' => $this->colunasArquivo]);
-        $this->step = 2;
     }
 
     public function lerCabecalhoExcel()
     {
         try {
+            $this->processando = true; // Ativar indicador de processamento
+            
             // Usar o conversor Python para detectar tipos e converter para CSV
             $conversor = new ConversorExcelService();
             
@@ -579,6 +592,8 @@ class ImportadorPersonalizado extends Component
             // Fallback para o método antigo
             $this->lerCabecalhoExcelFallback();
             return;
+        } finally {
+            $this->processando = false; // Desativar indicador de processamento
         }
         
         $this->step = 2;
@@ -630,6 +645,9 @@ class ImportadorPersonalizado extends Component
         }
         
         fclose($handle);
+        
+        // Atualizar o indicador de processamento para mostrar que está carregando a prévia
+        $this->dispatch('previa-carregada');
     }
 
     public function carregarLayout($layoutId)
@@ -670,6 +688,9 @@ class ImportadorPersonalizado extends Component
             $this->dadosPrevia[] = $linha;
             $linhaNumero++;
         }
+        
+        // Atualizar o indicador de processamento para mostrar que está carregando a prévia
+        $this->dispatch('previa-carregada');
     }
 
     private function carregarPreviaAutomaticaExcel($worksheet)
@@ -701,6 +722,9 @@ class ImportadorPersonalizado extends Component
             $this->totalLinhas++;
             $this->dadosPrevia[] = $linha;
         }
+        
+        // Atualizar o indicador de processamento para mostrar que está carregando a prévia
+        $this->dispatch('previa-carregada');
     }
 
     private function ehDataExcel($valor, $colunaIndex = null)
