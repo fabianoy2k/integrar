@@ -37,16 +37,31 @@ class ConversorLaravel:
             # Determinar engine baseado na extensão
             extensao = os.path.splitext(arquivo_entrada)[1].lower()
             
-            if extensao == '.xls':
-                try:
-                    df = pd.read_excel(arquivo_entrada, engine='xlrd')
-                except:
-                    df = pd.read_excel(arquivo_entrada, engine='openpyxl')
+            # Para arquivos CSV, usar read_csv com detecção de encoding
+            if extensao == '.csv':
+                # Tentar diferentes encodings
+                encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+                df = None
+                
+                for encoding in encodings:
+                    try:
+                        df = pd.read_csv(arquivo_entrada, sep=delimitador, encoding=encoding)
+                        break
+                    except UnicodeDecodeError:
+                        continue
+                
+                if df is None:
+                    raise Exception("Não foi possível decodificar o arquivo CSV com nenhum encoding testado")
             else:
+                # Para arquivos Excel, usar apenas openpyxl (mais compatível)
                 try:
                     df = pd.read_excel(arquivo_entrada, engine='openpyxl')
-                except:
-                    df = pd.read_excel(arquivo_entrada, engine='xlrd')
+                except Exception as e:
+                    # Se openpyxl falhar, tentar sem especificar engine
+                    try:
+                        df = pd.read_excel(arquivo_entrada)
+                    except Exception as e2:
+                        raise Exception(f"Erro ao ler arquivo Excel: {str(e2)}")
             
             # Detectar tipos
             tipos = self._detectar_tipos(df)

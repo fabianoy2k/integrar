@@ -31,10 +31,18 @@ class ConversorExcelService
             
             // Executar conversão
             $resultado = shell_exec($comando);
+            
+            // Log para debug
+            Log::debug('Resultado do conversor Python:', ['resultado' => $resultado]);
+            
             $dados = json_decode($resultado, true);
             
             if (!$dados || !isset($dados['sucesso'])) {
-                throw new Exception("Erro ao executar conversor Python: resposta inválida");
+                Log::error('Erro ao decodificar JSON do conversor Python:', [
+                    'resultado_raw' => $resultado,
+                    'json_error' => json_last_error_msg()
+                ]);
+                throw new Exception("Erro ao executar conversor Python: resposta inválida - " . json_last_error_msg());
             }
             
             if (!$dados['sucesso']) {

@@ -441,36 +441,72 @@ class ImportadorPersonalizado extends Component
 
     public function updatedArquivo()
     {
-        if ($this->arquivo) {
-            $this->processarArquivo();
+        try {
+            Log::info('Arquivo atualizado:', ['nome' => $this->arquivo ? $this->arquivo->getClientOriginalName() : 'null']);
+            
+            if ($this->arquivo) {
+                $this->processarArquivo();
+            }
+        } catch (\Exception $e) {
+            Log::error('Erro ao processar arquivo atualizado:', [
+                'erro' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Resetar estado em caso de erro
+            $this->step = 1;
+            $this->colunasArquivo = [];
+            $this->mapeamentoColunas = [];
+            $this->dadosPrevia = [];
+            $this->processando = false;
+            
+            session()->flash('error', 'Erro ao processar arquivo: ' . $e->getMessage());
         }
     }
 
     public function processarArquivo()
     {
-        $this->processando = true; // Ativar indicador de processamento
-        
-        $this->step = 1;
-        $this->colunasArquivo = [];
-        $this->mapeamentoColunas = [];
-        $this->dadosPrevia = [];
+        try {
+            Log::info('Iniciando processamento de arquivo:', [
+                'nome' => $this->arquivo->getClientOriginalName(),
+                'tamanho' => $this->arquivo->getSize(),
+                'tipo' => $this->arquivo->getMimeType()
+            ]);
+            
+            $this->processando = true; // Ativar indicador de processamento
+            
+            $this->step = 1;
+            $this->colunasArquivo = [];
+            $this->mapeamentoColunas = [];
+            $this->dadosPrevia = [];
 
-        $extensao = strtolower($this->arquivo->getClientOriginalExtension());
-        $this->tipoArquivo = $extensao;
+            $extensao = strtolower($this->arquivo->getClientOriginalExtension());
+            $this->tipoArquivo = $extensao;
 
-        // Sugerir nome do layout baseado no nome do arquivo
-        $nomeArquivo = pathinfo($this->arquivo->getClientOriginalName(), PATHINFO_FILENAME);
-        $this->nomeLayout = $nomeArquivo;
+            // Sugerir nome do layout baseado no nome do arquivo
+            $nomeArquivo = pathinfo($this->arquivo->getClientOriginalName(), PATHINFO_FILENAME);
+            $this->nomeLayout = $nomeArquivo;
 
-        // Detectar delimitador para CSV
-        if ($extensao === 'csv') {
-            $this->detectarDelimitador();
+            // Detectar delimitador para CSV
+            if ($extensao === 'csv') {
+                $this->detectarDelimitador();
+            }
+
+            // Ler cabeçalho do arquivo
+            $this->lerCabecalho();
+            
+            Log::info('Processamento de arquivo concluído com sucesso');
+            
+        } catch (\Exception $e) {
+            Log::error('Erro ao processar arquivo:', [
+                'erro' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            session()->flash('error', 'Erro ao processar arquivo: ' . $e->getMessage());
+        } finally {
+            $this->processando = false; // Desativar indicador de processamento
         }
-
-        // Ler cabeçalho do arquivo
-        $this->lerCabecalho();
-        
-        $this->processando = false; // Desativar indicador de processamento
     }
 
     public function detectarDelimitador()
@@ -500,11 +536,81 @@ class ImportadorPersonalizado extends Component
     {
         $extensao = $this->tipoArquivo;
         
-        if ($extensao === 'csv') {
-            $this->lerCabecalhoCsv();
-        } else {
-            $this->lerCabecalhoExcel();
+        // Usar o conversor Python para ambos CSV e Excel para garantir consistência
+        $this->lerCabecalhoComConversor();
+    }
+    
+    private function lerCabecalhoComConversor()
+    {
+        try {
+            $this->processando = true; // Ativar indicador de processamento
+            
+            // Usar o conversor Python para detectar tipos e converter para CSV
+            $conversor = new ConversorExcelService();
+            
+            // Criar diretório temp se não existir
+            $diretorioTemp = storage_path("app/temp");
+            if (!is_dir($diretorioTemp)) {
+                mkdir($diretorioTemp, 0755, true);
+            }
+            
+            $resultado = $conversor->converterExcelParaCsv(
+                $this->arquivo->getRealPath(),
+                $this->delimitador
+            );
+            
+            if ($resultado['sucesso']) {
+                // Ler o cabeçalho do CSV convertido
+                $handle = fopen($resultado['arquivo_csv'], 'r');
+                $cabecalho = fgetcsv($handle, 0, $this->delimitador);
+                fclose($handle);
+                
+                if ($this->temCabecalho && $cabecalho) {
+                    $this->colunasArquivo = array_map('trim', $cabecalho);
+                } else {
+                    // Se não tem cabeçalho, criar nomes automáticos
+                    $this->colunasArquivo = array_map(function($i) {
+                        return "Coluna " . ($i + 1);
+                    }, range(0, count($cabecalho) - 1));
+                }
+                
+                // Carregar prévia automática do CSV convertido
+                $this->carregarPreviaAutomaticaCsvConvertido($resultado['arquivo_csv']);
+                
+                // Limpar arquivo temporário
+                if (file_exists($resultado['arquivo_csv'])) {
+                    unlink($resultado['arquivo_csv']);
+                }
+                
+                Log::info('Cabeçalho lido via conversor Python:', [
+                    'cabecalho' => $this->colunasArquivo,
+                    'tipos_detectados' => $resultado['tipos_detectados']
+                ]);
+            } else {
+                // Fallback para o método antigo se Python falhar
+                Log::warning('Conversor Python falhou, usando fallback');
+                if ($this->tipoArquivo === 'csv') {
+                    $this->lerCabecalhoCsv();
+                } else {
+                    $this->lerCabecalhoExcelFallback();
+                }
+                return;
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Erro ao usar conversor Python:', ['erro' => $e->getMessage()]);
+            // Fallback para o método antigo
+            if ($this->tipoArquivo === 'csv') {
+                $this->lerCabecalhoCsv();
+            } else {
+                $this->lerCabecalhoExcelFallback();
+            }
+            return;
+        } finally {
+            $this->processando = false; // Desativar indicador de processamento
         }
+        
+        $this->step = 2;
     }
 
     public function lerCabecalhoCsv()
@@ -512,7 +618,17 @@ class ImportadorPersonalizado extends Component
         $this->processando = true; // Ativar indicador de processamento
         
         try {
+            Log::info('Lendo cabeçalho CSV:', [
+                'arquivo' => $this->arquivo->getRealPath(),
+                'delimitador' => $this->delimitador,
+                'tem_cabecalho' => $this->temCabecalho
+            ]);
+            
             $handle = fopen($this->arquivo->getRealPath(), 'r');
+            if (!$handle) {
+                throw new \Exception('Não foi possível abrir o arquivo CSV');
+            }
+            
             $cabecalho = fgetcsv($handle, 0, $this->delimitador);
             
             Log::info('Cabeçalho lido do CSV:', ['cabecalho' => $cabecalho, 'tem_cabecalho' => $this->temCabecalho]);
@@ -532,6 +648,12 @@ class ImportadorPersonalizado extends Component
             fclose($handle);
             Log::info('Colunas do arquivo definidas:', ['colunas' => $this->colunasArquivo]);
             $this->step = 2;
+        } catch (\Exception $e) {
+            Log::error('Erro ao ler cabeçalho CSV:', [
+                'erro' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
         } finally {
             $this->processando = false; // Desativar indicador de processamento
         }
@@ -545,8 +667,14 @@ class ImportadorPersonalizado extends Component
             // Usar o conversor Python para detectar tipos e converter para CSV
             $conversor = new ConversorExcelService();
             
+            // Criar diretório temp se não existir
+            $diretorioTemp = storage_path("app/temp");
+            if (!is_dir($diretorioTemp)) {
+                mkdir($diretorioTemp, 0755, true);
+            }
+            
             // Criar arquivo temporário para detecção
-            $arquivoTemp = storage_path("app/temp/detectar_cabecalho_" . time() . ".csv");
+            $arquivoTemp = $diretorioTemp . "/detectar_cabecalho_" . time() . ".csv";
             
             $resultado = $conversor->converterExcelParaCsv(
                 $this->arquivo->getRealPath(),
@@ -1538,6 +1666,24 @@ class ImportadorPersonalizado extends Component
 
     public function render()
     {
+        // Garantir que os dados sejam serializáveis
+        $this->limparDadosParaSerializacao();
+        
         return view('livewire.importador-personalizado');
+    }
+    
+    private function limparDadosParaSerializacao()
+    {
+        // Garantir que colunasArquivo seja um array simples
+        if (is_array($this->colunasArquivo)) {
+            $this->colunasArquivo = array_map('strval', $this->colunasArquivo);
+        }
+        
+        // Garantir que mapeamentoColunas seja serializável
+        if (is_array($this->mapeamentoColunas)) {
+            $this->mapeamentoColunas = array_filter($this->mapeamentoColunas, function($valor) {
+                return is_string($valor) || is_numeric($valor);
+            });
+        }
     }
 } 
