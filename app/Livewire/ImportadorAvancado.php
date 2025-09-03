@@ -30,9 +30,9 @@ class ImportadorAvancado extends Component
     public $total_registros_importados = 0;
 
     protected $rules = [
-        'arquivo' => 'required|file|mimes:csv,txt,pdf|max:10240', // 10MB
+        'arquivo' => 'required|file|extensions:csv,txt,pdf,ofx|max:10240', // 10MB
         'empresa_id' => 'required|exists:empresas,id',
-        'layout_selecionado' => 'required|in:connectere,dominio,grafeno,sicoob,caixa_federal',
+        'layout_selecionado' => 'required|in:connectere,dominio,grafeno,sicoob,caixa_federal,ofx',
         'conta_banco' => 'required_if:layout_selecionado,grafeno,sicoob,caixa_federal',
     ];
 
@@ -189,6 +189,7 @@ class ImportadorAvancado extends Component
             'grafeno' => 'conversor_extrato_grafeno_pdf_csv.py',
             'sicoob' => 'conversor_extrato_sicoob_pdf_csv.py',
             'caixa_federal' => 'conversor_extrato_caixa_federal_pdf_csv.py',
+            'ofx' => 'conversor_ofx_csv.py',
         ];
 
         return $scripts[$this->layout_selecionado] ?? 'conversor_connectere_csv.py';
@@ -517,6 +518,19 @@ class ImportadorAvancado extends Component
 
     private function formatarData($data)
     {
+        // Verificar se a data não é nula ou vazia
+        if (empty($data) || $data === null) {
+            return date('Y-m-d'); // Data atual como fallback
+        }
+        
+        // Limpar bytes nulos se existirem
+        $data = str_replace("\0", '', $data);
+        $data = trim($data);
+        
+        if (empty($data)) {
+            return date('Y-m-d'); // Data atual como fallback
+        }
+        
         // Tentar diferentes formatos de data
         $formatos = ['d/m/Y', 'Y-m-d', 'd-m-Y', 'm/d/Y'];
         
@@ -623,6 +637,7 @@ class ImportadorAvancado extends Component
             'grafeno' => 'Grafeno (PDF)',
             'sicoob' => 'Sicoob (PDF)',
             'caixa_federal' => 'Caixa Econômica Federal (PDF)',
+            'ofx' => 'Formato OFX',
         ];
 
         return view('livewire.importador-avancado', [

@@ -75,12 +75,12 @@
                                 <div class="flex text-sm text-gray-600">
                                     <label for="arquivo" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
                                         <span>Fazer upload de um arquivo</span>
-                                        <input id="arquivo" wire:model="arquivo" type="file" class="sr-only" accept=".csv,.txt,.pdf">
+                                        <input id="arquivo" wire:model="arquivo" type="file" class="sr-only" accept=".csv,.txt,.pdf,.ofx">
                                     </label>
                                     <p class="pl-1">ou arraste e solte</p>
                                 </div>
                                 <p class="text-xs text-gray-500">
-                                    CSV, TXT ou PDF até 10MB
+                                    CSV, TXT, PDF ou OFX até 10MB
                                 </p>
                             </div>
                         </div>
