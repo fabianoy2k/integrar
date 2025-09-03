@@ -83,90 +83,9 @@
             </div>
         </div>
 
-        <!-- Ações em Massa -->
-        @if(!empty($selecionados))
-            <div class="p-4 bg-blue-50 border-b border-blue-200">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-blue-800">
-                        {{ count($selecionados) }} item(s) selecionado(s)
-                    </span>
-                    <div class="space-x-2">
-                        <button wire:click="edicaoMassa = true" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                            Editar em Massa
-                        </button>
 
-                        <button wire:click="abrirModalExclusao" class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700">
-                            Excluir Selecionados
-                        </button>
-                        <button wire:click="deselecionarTodos" class="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-700">
-                            Deselecionar Todos
-                        </button>
-                    </div>
-                </div>
-            </div>
-        @endif
 
-        <!-- Modal de Confirmação de Exclusão -->
-        @if($confirmarExclusao)
-            <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div class="bg-white rounded-lg p-6 w-full max-w-md">
-                    <h3 class="text-lg font-semibold mb-4 text-red-600">Confirmar Exclusão</h3>
-                    <p class="mb-4 text-gray-700">
-                        Tem certeza que deseja excluir <strong>{{ count($selecionados) }}</strong> lançamento(s) selecionado(s)?
-                    </p>
-                    <p class="mb-4 text-sm text-red-600">
-                        ⚠️ Esta ação não pode ser desfeita!
-                    </p>
-                    <div class="flex justify-end space-x-2">
-                        <button wire:click="cancelarExclusao" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
-                            Cancelar
-                        </button>
-                        <button wire:click="excluirLancamentos" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-                            Confirmar Exclusão
-                        </button>
-                    </div>
-                </div>
-            </div>
-        @endif
 
-        <!-- Modal de Edição em Massa -->
-        @if($edicaoMassa)
-            <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div class="bg-white rounded-lg p-6 w-full max-w-md">
-                    <h3 class="text-lg font-semibold mb-4">Edição em Massa</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Data</label>
-                            <input type="date" wire:model="dataMassa" class="w-full rounded-md border-gray-300 shadow-sm">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Conta Débito</label>
-                            <input type="text" wire:model="contaDebitoMassa" class="w-full rounded-md border-gray-300 shadow-sm">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Conta Crédito</label>
-                            <input type="text" wire:model="contaCreditoMassa" class="w-full rounded-md border-gray-300 shadow-sm">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Terceiro</label>
-                            <input type="text" wire:model="terceiroMassa" class="w-full rounded-md border-gray-300 shadow-sm">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Histórico</label>
-                            <textarea wire:model="historicoMassa" rows="3" class="w-full rounded-md border-gray-300 shadow-sm resize-none" placeholder="Digite o histórico"></textarea>
-                        </div>
-                    </div>
-                    <div class="flex justify-end space-x-2 mt-6">
-                        <button wire:click="edicaoMassa = false" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
-                            Cancelar
-                        </button>
-                        <button wire:click="aplicarEdicaoMassa" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                            Aplicar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        @endif
 
         <!-- Modal de Novo Lançamento -->
         @if($modalNovoLancamento)
@@ -327,90 +246,78 @@
             <table class="min-w-full table-auto divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal">
-                            <input type="checkbox" wire:click="selecionarTodos" class="rounded border-gray-300">
+                        <th class="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal w-12">
+                            <div class="leading-tight">Conf.</div>
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal">
-                            Conf.
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal cursor-pointer" wire:click="ordenar('data')">
-                            Data
+                        <th class="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal cursor-pointer w-20" wire:click="ordenar('data')">
+                            <div class="leading-tight">Data</div>
                             @if($ordenacao === 'data')
                                 <span class="ml-1">{{ $direcao === 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal cursor-pointer" wire:click="ordenar('nome_empresa')">
-                            Terceiro
+                        <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal cursor-pointer w-48" wire:click="ordenar('nome_empresa')">
+                            <div class="leading-tight">Terceiro</div>
                             @if($ordenacao === 'nome_empresa')
                                 <span class="ml-1">{{ $direcao === 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal cursor-pointer" wire:click="ordenar('conta_debito')">
-                            Débito
+                        <th class="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal cursor-pointer w-20" wire:click="ordenar('conta_debito')">
+                            <div class="leading-tight">Débito</div>
                             @if($ordenacao === 'conta_debito')
                                 <span class="ml-1">{{ $direcao === 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal cursor-pointer" wire:click="ordenar('conta_credito')">
-                            Crédito
+                        <th class="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal cursor-pointer w-20" wire:click="ordenar('conta_credito')">
+                            <div class="leading-tight">Crédito</div>
                             @if($ordenacao === 'conta_credito')
                                 <span class="ml-1">{{ $direcao === 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal cursor-pointer" wire:click="ordenar('valor')">
-                            Valor
+                        <th class="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal cursor-pointer w-20" wire:click="ordenar('valor')">
+                            <div class="leading-tight">Valor_Contabilizado</div>
                             @if($ordenacao === 'valor')
                                 <span class="ml-1">{{ $direcao === 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal cursor-pointer" wire:click="ordenar('historico')">
-                            Histórico
+                        <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal cursor-pointer w-80" wire:click="ordenar('historico')">
+                            <div class="leading-tight">Histórico</div>
                             @if($ordenacao === 'historico')
                                 <span class="ml-1">{{ $direcao === 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal cursor-pointer" wire:click="ordenar('detalhes_operacao')">
-                            Detalhes da Operação
-                            @if($ordenacao === 'detalhes_operacao')
-                                <span class="ml-1">{{ $direcao === 'asc' ? '↑' : '↓' }}</span>
-                            @endif
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal cursor-pointer" wire:click="ordenar('codigo_filial_matriz')">
-                            Código Filial/Matriz
+                        <th class="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal cursor-pointer w-20" wire:click="ordenar('codigo_filial_matriz')">
+                            <div class="leading-tight">Código<br>Filial/Matriz</div>
                             @if($ordenacao === 'codigo_filial_matriz')
                                 <span class="ml-1">{{ $direcao === 'asc' ? '↑' : '↓' }}</span>
                             @endif
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal">
-                            Ações
+                        <th class="px-1 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider break-words whitespace-normal w-12">
+                            <div class="leading-tight">Ações</div>
                         </th>
                     </tr>
                     <tr>
                         <th></th>
-                        <th></th>
                         <th>
-                            <input type="date" wire:model.live="filtroData" class="h-9 px-3 rounded-md border border-gray-300 bg-white text-xs placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all w-full shadow-sm outline-none" />
+                            <input type="date" wire:model.live="filtroData" class="h-7 px-1 rounded-md border border-gray-300 bg-white text-xs placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all w-full shadow-sm outline-none" />
                         </th>
                         <th>
-                            <input type="text" wire:model.live.debounce.300ms="filtroTerceiro" placeholder="Buscar..." class="h-9 px-3 rounded-md border border-gray-300 bg-white text-xs placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all w-full shadow-sm outline-none" />
+                            <input type="text" wire:model.live.debounce.300ms="filtroTerceiro" placeholder="Buscar..." class="h-7 px-1 rounded-md border border-gray-300 bg-white text-xs placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all w-full shadow-sm outline-none" />
                         </th>
                         <th>
-                            <input type="text" wire:model.live.debounce.300ms="filtroContaDebito" placeholder="Débito..." class="h-9 px-3 rounded-md border border-gray-300 bg-white text-xs placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all w-full shadow-sm outline-none" />
+                            <input type="text" wire:model.live.debounce.300ms="filtroContaDebito" placeholder="Débito..." class="h-7 px-1 rounded-md border border-gray-300 bg-white text-xs placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all w-full shadow-sm outline-none" />
                         </th>
                         <th>
-                            <input type="text" wire:model.live.debounce.300ms="filtroContaCredito" placeholder="Crédito..." class="h-9 px-3 rounded-md border border-gray-300 bg-white text-xs placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all w-full shadow-sm outline-none" />
+                            <input type="text" wire:model.live.debounce.300ms="filtroContaCredito" placeholder="Crédito..." class="h-7 px-1 rounded-md border border-gray-300 bg-white text-xs placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all w-full shadow-sm outline-none" />
                         </th>
                         <th>
-                            <input type="text" wire:model.live.debounce.300ms="filtroValor" placeholder="R$ 0,00" class="h-9 px-3 rounded-md border border-gray-300 bg-white text-xs placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all w-full shadow-sm outline-none" />
+                            <input type="text" wire:model.live.debounce.300ms="filtroValor" placeholder="R$ 0,00" class="h-7 px-1 rounded-md border border-gray-300 bg-white text-xs placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all w-full shadow-sm outline-none" />
                         </th>
                         <th>
-                            <input type="text" wire:model.live.debounce.300ms="filtroHistorico" placeholder="Buscar..." class="h-9 px-3 rounded-md border border-gray-300 bg-white text-xs placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all w-full shadow-sm outline-none" />
+                            <input type="text" wire:model.live.debounce.300ms="filtroHistorico" placeholder="Buscar..." class="h-7 px-1 rounded-md border border-gray-300 bg-white text-xs placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all w-full shadow-sm outline-none" />
                         </th>
-                        <th></th>
                         <th>
-                            <input type="text" wire:model.live.debounce.300ms="filtroCodigoFilial" placeholder="Filial/Matriz..." class="h-9 px-3 rounded-md border border-gray-300 bg-white text-xs placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all w-full shadow-sm outline-none" />
+                            <input type="text" wire:model.live.debounce.300ms="filtroCodigoFilial" placeholder="Filial/Matriz..." class="h-7 px-1 rounded-md border border-gray-300 bg-white text-xs placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all w-full shadow-sm outline-none" />
                         </th>
-                        <th></th>
                         <th></th>
                     </tr>
                 </thead>
@@ -430,105 +337,58 @@
                             wire:key="lancamento-{{ $lancamento->id }}"
                             data-lancamento-id="{{ $lancamento->id }}"
                             style="cursor: pointer;">
-                            <td class="px-6 py-4 whitespace-nowrap" onclick="event.stopPropagation()">
-                                <input type="checkbox" wire:click="toggleSelecao({{ $lancamento->id }})" 
-                                       @if(in_array($lancamento->id, $selecionados)) checked @endif
-                                       class="rounded border-gray-300">
+                            <td class="px-1 py-3 text-center text-sm text-gray-900 break-words whitespace-normal" onclick="event.stopPropagation()">
+                                <div class="w-4 h-4 rounded-full border-2 {{ $lancamento->conferido ? 'bg-green-400 border-green-600' : 'bg-white border-gray-300' }} mx-auto"></div>
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-900 break-words whitespace-normal" onclick="event.stopPropagation()">
-                                <div class="w-4 h-4 rounded-full border-2 {{ $lancamento->conferido ? 'bg-green-400 border-green-600' : 'bg-white border-gray-300' }}"></div>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-900 break-words whitespace-normal" onclick="event.stopPropagation()">
+                            <td class="px-1 py-3 text-center text-sm text-gray-900 break-words whitespace-normal" onclick="event.stopPropagation()">
                                 @if($editandoId === $lancamento->id && $editandoCampo === 'data')
                                     <input type="date" 
                                            wire:model="valorEditando"
                                            wire:keydown.enter="salvarEdicao"
                                            wire:keydown.escape="cancelarEdicao"
-                                           class="w-full rounded border-2 border-blue-500 text-sm bg-white focus:border-blue-600"
+                                           class="w-full rounded border-2 border-blue-500 text-xs bg-white focus:border-blue-600"
                                            value="{{ $lancamento->data->format('Y-m-d') }}"
                                            autofocus>
                                 @else
-                                    <div class="cursor-pointer hover:bg-blue-50 p-1 rounded" 
+                                    <div class="cursor-pointer hover:bg-blue-50 p-1 rounded text-xs" 
                                          wire:click="iniciarEdicao({{ $lancamento->id }}, 'data', '{{ $lancamento->data->format('Y-m-d') }}')"
                                          title="Clique para editar a data">
                                         {{ $lancamento->data->format('d/m/Y') }}
                                     </div>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-900 break-words whitespace-normal">
-                                @if($lancamento->terceiro_id && $lancamento->nome_terceiro)
-                                    {{ $lancamento->nome_terceiro }}
-                                @else
-                                    {{ $lancamento->nome_empresa }}
-                                @endif
+                            <td class="px-1 py-3 text-sm text-gray-900 break-words whitespace-normal">
+                                <div class="text-xs leading-tight">
+                                    @if($lancamento->terceiro_id && $lancamento->nome_terceiro)
+                                        {{ $lancamento->nome_terceiro }}
+                                    @else
+                                        {{ $lancamento->nome_empresa }}
+                                    @endif
+                                </div>
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-900">
+                            <td class="px-1 py-3 text-sm text-gray-900">
                                 <div class="flex items-center gap-1" onclick="event.stopPropagation()">
                                     <input type="text"
                                            value="{{ $debitoAtual }}"
                                            wire:blur="iniciarEdicao({{ $lancamento->id }}, 'conta_debito', $event.target.value)"
-                                           class="w-20 rounded border-2 border-black text-sm bg-white focus:border-blue-500 input-debito"
+                                           class="w-full rounded border-2 border-black text-xs bg-white focus:border-blue-500 input-debito"
                                            placeholder="Débito"
                                            data-lancamento-id="{{ $lancamento->id }}"
                                            onkeydown="handleKeyDown(event, this)">
-                                    @if($debitoOriginal && $debitoOriginal !== $debitoAtual)
-                                        <span class="text-xs text-gray-500 flex items-center" style="gap: 2px;">
-                                            <button type="button"
-                                                class="text-blue-600 hover:text-blue-900"
-                                                onclick="voltarContaOriginalDebito(this, '{{ $debitoOriginal }}', '{{ $lancamento->id }}')"
-                                                title="Voltar para valor original da importação">
-                                                ⟳
-                                            </button>
-                                            <span class="ml-1" title="Valor original da importação">→ {{ $debitoOriginal }}</span>
-                                        </span>
-                                    @endif
-                                    @if($temAmarracaoDebito)
-                                        <span class="text-xs text-gray-500 flex items-center" style="gap: 2px;">
-                                            <button type="button"
-                                                class="text-green-600 hover:text-green-900"
-                                                onclick="alternarContaAmarracaoDebito(this, '{{ $lancamento->amarracao->conta_debito }}', '{{ $lancamento->id }}')"
-                                                title="Alternar para valor sugerido pela amarração">
-                                                ↔
-                                            </button>
-                                            <span class="ml-1" title="Valor sugerido pela amarração">→ {{ $lancamento->amarracao->conta_debito }}</span>
-                                        </span>
-                                    @endif
                                 </div>
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-900">
+                            <td class="px-1 py-3 text-sm text-gray-900">
                                 <div class="flex items-center gap-1" onclick="event.stopPropagation()">
                                     <input type="text"
                                            value="{{ $creditoAtual }}"
                                            wire:blur="iniciarEdicao({{ $lancamento->id }}, 'conta_credito', $event.target.value)"
-                                           class="w-20 rounded border-2 border-black text-sm bg-white focus:border-blue-500 input-credito"
+                                           class="w-full rounded border-2 border-black text-xs bg-white focus:border-blue-500 input-credito"
                                            placeholder="Crédito"
                                            data-lancamento-id="{{ $lancamento->id }}"
                                            onkeydown="handleKeyDownCredito(event, this)">
-                                    @if($creditoOriginal && $creditoOriginal !== $creditoAtual)
-                                        <span class="text-xs text-gray-500 flex items-center" style="gap: 2px;">
-                                            <button type="button"
-                                                class="text-blue-600 hover:text-blue-900"
-                                                onclick="voltarContaOriginalCredito(this, '{{ $creditoOriginal }}', '{{ $lancamento->id }}')"
-                                                title="Voltar para valor original da importação">
-                                                ⟳
-                                            </button>
-                                            <span class="ml-1" title="Valor original da importação">→ {{ $creditoOriginal }}</span>
-                                        </span>
-                                    @endif
-                                    @if($temAmarracaoCredito)
-                                        <span class="text-xs text-gray-500 flex items-center" style="gap: 2px;">
-                                            <button type="button"
-                                                class="text-green-600 hover:text-green-900"
-                                                onclick="alternarContaAmarracaoCredito(this, '{{ $lancamento->amarracao->conta_credito }}', '{{ $lancamento->id }}')"
-                                                title="Alternar para valor sugerido pela amarração">
-                                                ↔
-                                            </button>
-                                            <span class="ml-1" title="Valor sugerido pela amarração">→ {{ $lancamento->amarracao->conta_credito }}</span>
-                                        </span>
-                                    @endif
                                 </div>
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-900 break-words whitespace-normal" onclick="event.stopPropagation()">
+                            <td class="px-1 py-3 text-center text-sm text-gray-900 break-words whitespace-normal" onclick="event.stopPropagation()">
                                 @if($editandoId === $lancamento->id && $editandoCampo === 'valor')
                                     <input type="number" 
                                            wire:model="valorEditando"
@@ -536,105 +396,30 @@
                                            wire:keydown.escape="cancelarEdicao"
                                            step="0.01"
                                            min="0"
-                                           class="w-full rounded border-2 border-blue-500 text-sm bg-white focus:border-blue-600"
+                                           class="w-full rounded border-2 border-blue-500 text-xs bg-white focus:border-blue-600"
                                            value="{{ $lancamento->valor }}"
                                            autofocus>
                                 @else
-                                    <div class="cursor-pointer hover:bg-blue-50 p-1 rounded" 
+                                    <div class="cursor-pointer hover:bg-blue-50 p-1 rounded text-xs" 
                                          wire:click="iniciarEdicao({{ $lancamento->id }}, 'valor', '{{ $lancamento->valor }}')"
                                          title="Clique para editar o valor">
                                         R$ {{ number_format($lancamento->valor, 2, ',', '.') }}
                                     </div>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-900 break-words whitespace-normal" onclick="event.stopPropagation()">
-                                @if($editandoId === $lancamento->id && $editandoCampo === 'historico')
-                                    <div class="space-y-2">
-                                        <textarea 
-                                               wire:model="valorEditando"
-                                               wire:keydown.escape="cancelarEdicao"
-                                               class="w-full rounded border-2 border-blue-500 text-sm bg-white focus:border-blue-600 resize-none"
-                                               rows="3"
-                                               placeholder="Digite o histórico"
-                                               autofocus>{{ $lancamento->historico }}</textarea>
-                                        <div class="flex justify-end space-x-2">
-                                            <button wire:click="cancelarEdicao" class="px-2 py-1 text-xs bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
-                                                Cancelar
-                                            </button>
-                                            <button wire:click="salvarEdicao" class="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">
-                                                Salvar
-                                            </button>
-                                        </div>
-                                    </div>
-                                @else
-                                    <div class="cursor-pointer hover:bg-blue-50 p-1 rounded" 
-                                         wire:click="iniciarEdicao({{ $lancamento->id }}, 'historico', '{{ addslashes($lancamento->historico) }}')"
-                                         title="Clique para editar o histórico">
-                                        {{ $lancamento->historico }}
-                                    </div>
-                                @endif
+                            <td class="px-1 py-3 text-sm text-gray-900 break-words whitespace-normal" onclick="event.stopPropagation()">
+                                <textarea 
+                                       wire:blur="iniciarEdicao({{ $lancamento->id }}, 'historico', $event.target.value)"
+                                       class="w-full rounded border-2 border-black text-xs bg-white focus:border-blue-500 input-historico resize-none"
+                                       placeholder="Histórico"
+                                       data-lancamento-id="{{ $lancamento->id }}"
+                                       rows="2"
+                                       onkeydown="handleKeyDownHistorico(event, this)">{{ $lancamento->historico }}</textarea>
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-900 break-words whitespace-normal">
-                                <div x-data="{
-                                    tags: [],
-                                    input: '',
-                                    lancamentoId: {{ $lancamento->id }},
-                                    init() {
-                                        this.loadTags();
-                                    },
-                                    loadTags() {
-                                        const detalhes = '{{ $lancamento->detalhes_operacao ?? '' }}';
-                                        const novasTags = detalhes ? detalhes.split(',').filter(t => t.trim() !== '') : [];
-                                        this.tags = novasTags;
-                                    },
-                                    addTag() {
-                                        if(this.input.trim() && !this.tags.includes(this.input.trim())) {
-                                            this.tags.push(this.input.trim());
-                                            this.input = '';
-                                            this.updateLivewire();
-                                        }
-                                    },
-                                    removeTag(index) {
-                                        if (index >= 0 && index < this.tags.length) {
-                                            this.tags.splice(index, 1);
-                                            this.tags = [...this.tags]; // força reatividade
-                                            this.updateLivewire();
-                                        }
-                                    },
-                                    updateLivewire() {
-                                        // Usar Livewire global
-                                        if (window.Livewire) {
-                                            try {
-                                                const wireId = document.querySelector('[wire\\:id]').getAttribute('wire:id');
-                                                const component = window.Livewire.find(wireId);
-                                                
-                                                if (component) {
-                                                    component.call('atualizarDetalhesOperacao', this.lancamentoId, this.tags.join(','));
-                                                }
-                                            } catch (error) {
-                                                console.error('Erro ao chamar método:', error);
-                                            }
-                                        }
-                                        
-                                        // Aguardar resposta do Livewire e forçar atualização
-                                        setTimeout(() => {
-                                            this.loadTags();
-                                        }, 500);
-                                    }
-                                }" class="flex flex-wrap gap-1 items-center" wire:key="detalhes-{{ $lancamento->id }}" onclick="event.stopPropagation()">
-                                    <template x-for="(tag, index) in tags" :key="`tag-{{ $lancamento->id }}-${index}`">
-                                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full flex items-center text-xs">
-                                            <span x-text="tag"></span>
-                                            <button type="button" class="ml-1 text-blue-600 hover:text-red-600" @click="removeTag(index)">&times;</button>
-                                        </span>
-                                    </template>
-                                    <input type="text" x-model="input" @keydown.enter.prevent="addTag()" @blur="addTag()" class="border rounded px-2 py-1 text-xs focus:outline-none" placeholder="Digite e pressione Enter">
-                                </div>
+                            <td class="px-1 py-3 text-center text-sm text-gray-900 break-words whitespace-normal">
+                                <div class="text-xs">{{ $lancamento->codigo_filial_matriz }}</div>
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-900 break-words whitespace-normal">
-                                {{ $lancamento->codigo_filial_matriz }}
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-900 whitespace-nowrap" onclick="event.stopPropagation()">
+                            <td class="px-1 py-3 text-center text-sm text-gray-900 whitespace-nowrap" onclick="event.stopPropagation()">
                                 <div class="relative">
                                     <button wire:click="abrirMenuAcoes({{ $lancamento->id }})" 
                                             class="w-8 h-8 flex items-center justify-center rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
@@ -675,7 +460,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="11" class="px-6 py-4 text-center text-gray-500">
+                            <td colspan="9" class="px-6 py-4 text-center text-gray-500">
                                 Nenhum lançamento encontrado.
                             </td>
                         </tr>
@@ -808,6 +593,64 @@ function handleKeyDownCredito(event, input) {
     }
 }
 
+function handleKeyDownHistorico(event, input) {
+    if (event.key === 'Enter' || event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        
+        const currentValue = input.value;
+        const currentId = input.dataset.lancamentoId;
+        const direction = (event.key === 'ArrowUp') ? 'up' : 'down';
+        
+        // Salvar o valor primeiro
+        if (window.Livewire) {
+            const wireId = document.querySelector('[wire\\:id]').getAttribute('wire:id');
+            window.Livewire.find(wireId).call('iniciarEdicao', currentId, 'historico', currentValue);
+            window.Livewire.find(wireId).call('salvarEdicao');
+        }
+        
+        // Se for Enter, marcar como conferido independentemente de alteração
+        if (event.key === 'Enter') {
+            setTimeout(() => {
+                if (window.Livewire) {
+                    const wireId = document.querySelector('[wire\\:id]').getAttribute('wire:id');
+                    window.Livewire.find(wireId).call('marcarComoConferido', currentId);
+                }
+            }, 50);
+        }
+        
+        // Navegar para o próximo input
+        setTimeout(() => {
+            const historicoInputs = document.querySelectorAll('.input-historico');
+            let targetInput = null;
+            
+            // Encontrar o input atual
+            let currentIndex = -1;
+            for (let i = 0; i < historicoInputs.length; i++) {
+                if (historicoInputs[i].dataset.lancamentoId == currentId) {
+                    currentIndex = i;
+                    break;
+                }
+            }
+            
+            if (currentIndex !== -1) {
+                if (direction === 'down' && currentIndex + 1 < historicoInputs.length) {
+                    // Navegar para baixo
+                    targetInput = historicoInputs[currentIndex + 1];
+                } else if (direction === 'up' && currentIndex - 1 >= 0) {
+                    // Navegar para cima
+                    targetInput = historicoInputs[currentIndex - 1];
+                }
+            }
+            
+            // Focar no input alvo se existir
+            if (targetInput) {
+                targetInput.focus();
+                targetInput.select(); // Selecionar todo o texto para facilitar a edição
+            }
+        }, 100); // Pequeno delay para garantir que o valor foi salvo
+    }
+}
+
 function reverterContaDebito(btn, valorOriginal, lancamentoId) {
     let input = btn.closest('.flex').querySelector('.input-debito');
     if (!input) {
@@ -851,54 +694,7 @@ function reverterContaCredito(btn, valorOriginal, lancamentoId) {
     }
 }
 
-function voltarContaOriginalDebito(btn, valorOriginal, lancamentoId) {
-    let input = btn.closest('.flex').querySelector('.input-debito');
-    if (!input) {
-        input = document.querySelector('.input-debito[data-lancamento-id="' + lancamentoId + '"]');
-    }
-    if (input) {
-        input.value = valorOriginal;
-        input.dispatchEvent(new Event('blur', { bubbles: true }));
-        input.focus();
-        input.select();
-    }
-}
-function alternarContaAmarracaoDebito(btn, valorAmarracao, lancamentoId) {
-    let input = btn.closest('.flex').querySelector('.input-debito');
-    if (!input) {
-        input = document.querySelector('.input-debito[data-lancamento-id="' + lancamentoId + '"]');
-    }
-    if (input) {
-        input.value = valorAmarracao;
-        input.dispatchEvent(new Event('blur', { bubbles: true }));
-        input.focus();
-        input.select();
-    }
-}
-function voltarContaOriginalCredito(btn, valorOriginal, lancamentoId) {
-    let input = btn.closest('.flex').querySelector('.input-credito');
-    if (!input) {
-        input = document.querySelector('.input-credito[data-lancamento-id="' + lancamentoId + '"]');
-    }
-    if (input) {
-        input.value = valorOriginal;
-        input.dispatchEvent(new Event('blur', { bubbles: true }));
-        input.focus();
-        input.select();
-    }
-}
-function alternarContaAmarracaoCredito(btn, valorAmarracao, lancamentoId) {
-    let input = btn.closest('.flex').querySelector('.input-credito');
-    if (!input) {
-        input = document.querySelector('.input-credito[data-lancamento-id="' + lancamentoId + '"]');
-    }
-    if (input) {
-        input.value = valorAmarracao;
-        input.dispatchEvent(new Event('blur', { bubbles: true }));
-        input.focus();
-        input.select();
-    }
-}
+
 
 // Garantir que os eventos de clique funcionem após ordenação
 document.addEventListener('livewire:init', () => {
@@ -927,43 +723,7 @@ document.addEventListener('livewire:init', () => {
         setTimeout(aplicarCursorPointer, 100);
     });
     
-    // Escutar evento de tags atualizadas
-    Livewire.on('tags-atualizadas', (data) => {
-        // Se for array, pegue o primeiro elemento
-        if (Array.isArray(data)) {
-            data = data[0];
-        }
-        const afetados = Array.isArray(data.lancamentos_afetados) ? data.lancamentos_afetados : [];
-        
-        // Forçar atualização completa do Livewire
-        if (window.Livewire) {
-            const wireId = document.querySelector('[wire\\:id]').getAttribute('wire:id');
-            const component = window.Livewire.find(wireId);
-            if (component) {
-                component.call('$refresh');
-            }
-        }
-        
-        // Aguardar um pouco e então atualizar os componentes Alpine
-        setTimeout(() => {
-            document.querySelectorAll('[x-data*="tags"]').forEach(tagsContainer => {
-                const lancamentoRow = tagsContainer.closest('tr[data-lancamento-id]');
-                if (!lancamentoRow) return;
-                const lancamentoId = parseInt(lancamentoRow.getAttribute('data-lancamento-id'));
-                if (afetados.includes(lancamentoId) || lancamentoId === data.lancamento_origem_id) {
-                    const alpineComponent = Alpine.$data(tagsContainer);
-                    if (alpineComponent && alpineComponent.loadTags) {
-                        // Recarregar as tags do Alpine.js
-                        alpineComponent.loadTags();
-                        tagsContainer.style.backgroundColor = '#fef3c7';
-                        setTimeout(() => {
-                            tagsContainer.style.backgroundColor = '';
-                        }, 1000);
-                    }
-                }
-            });
-        }, 200);
-    });
+
     
     // Reaplicar após qualquer atualização do componente
     Livewire.on('$updated', () => {
@@ -983,25 +743,7 @@ document.addEventListener('livewire:init', () => {
         }
     });
     
-    // Garantir que o Alpine.js seja reinicializado após atualizações do Livewire
-    Livewire.on('$refresh', () => {
-        // Pequeno delay para garantir que o DOM foi atualizado
-        setTimeout(() => {
-            // Forçar reinicialização do Alpine.js se necessário
-            if (window.Alpine) {
-                window.Alpine.initTree(document.body);
-            }
-        }, 50);
-    });
-    
-    // Garantir que o Alpine.js seja reinicializado após qualquer atualização
-    Livewire.on('$updated', () => {
-        setTimeout(() => {
-            if (window.Alpine) {
-                window.Alpine.initTree(document.body);
-            }
-        }, 50);
-    });
+
     
     // Fechar menu de ações quando clicar fora
     document.addEventListener('click', function(event) {

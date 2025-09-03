@@ -25,15 +25,7 @@ class TabelaLancamentos extends Component
     public $filtroContaAmbas = '';
     public $filtroValor = '';
     public $filtroConferido = '';
-    public $selecionados = [];
-    public $edicaoMassa = false;
-    public $dataMassa = '';
-    public $contaDebitoMassa = '';
-    public $contaCreditoMassa = '';
-    public $terceiroMassa = '';
-    public $historicoMassa = '';
     public $perPage = 50;
-    public $confirmarExclusao = false;
     
     // Edição inline
     public $editandoId = null;
@@ -102,6 +94,13 @@ class TabelaLancamentos extends Component
         // Se foi passado um ID de importação na URL, filtrar por ela
         if (request()->has('importacao')) {
             $this->filtroImportacao = request()->get('importacao');
+        }
+        
+        // Validar ordenação inicial
+        $camposValidos = ['data', 'nome_empresa', 'conta_debito', 'conta_credito', 'valor', 'historico', 'codigo_filial_matriz'];
+        if (!in_array($this->ordenacao, $camposValidos)) {
+            $this->ordenacao = 'data';
+            $this->direcao = 'desc';
         }
         
         // Definir data padrão para novo lançamento
@@ -207,11 +206,20 @@ class TabelaLancamentos extends Component
 
     public function ordenar($campo)
     {
+        // Validar se o campo de ordenação é válido
+        $camposValidos = ['data', 'nome_empresa', 'conta_debito', 'conta_credito', 'valor', 'historico', 'codigo_filial_matriz'];
+        
+        if (!in_array($campo, $camposValidos)) {
+            // Se o campo não for válido, usar ordenação padrão
+            $this->ordenacao = 'data';
+            $this->direcao = 'desc';
+        } else {
         if ($this->ordenacao === $campo) {
             $this->direcao = $this->direcao === 'asc' ? 'desc' : 'asc';
         } else {
             $this->ordenacao = $campo;
             $this->direcao = 'asc';
+            }
         }
         $this->resetPage();
         $this->dispatch('ordenacao-alterada');
@@ -329,79 +337,7 @@ class TabelaLancamentos extends Component
         $this->cancelarEdicao();
     }
 
-    public function abrirModalExclusao()
-    {
-        Log::info("=== INÍCIO abrirModalExclusao ===");
-        
-        if (empty($this->selecionados)) {
-            Log::warning("Tentativa de abrir modal sem lançamentos selecionados");
-            session()->flash('error', 'Nenhum lançamento selecionado para exclusão.');
-            return;
-        }
-        
-        Log::info("Selecionados", [
-            'quantidade' => count($this->selecionados),
-            'ids' => $this->selecionados
-        ]);
-        
-        $this->confirmarExclusao = true;
-        Log::info("Modal de confirmação ativado");
-        Log::info("=== FIM abrirModalExclusao ===");
-    }
 
-    public function cancelarExclusao()
-    {
-        $this->confirmarExclusao = false;
-    }
-
-    public function excluirLancamentos()
-    {
-        if (empty($this->selecionados)) {
-            return;
-        }
-
-        try {
-            // Buscar os lançamentos antes de excluir para registrar no log
-            $lancamentosParaExcluir = Lancamento::whereIn('id', $this->selecionados)->get();
-            
-            // Registrar no log antes da exclusão
-            foreach ($lancamentosParaExcluir as $lancamento) {
-                Log::info("Lançamento excluído", [
-                    'lancamento_id' => $lancamento->id,
-                    'data' => $lancamento->data,
-                    'historico' => $lancamento->historico,
-                    'valor' => $lancamento->valor,
-                    'terceiro' => $lancamento->nome_empresa,
-                    'importacao_id' => $lancamento->importacao_id,
-                    'usuario' => 'Sistema'
-                ]);
-            }
-
-            // Excluir os lançamentos
-            $quantidadeExcluida = Lancamento::whereIn('id', $this->selecionados)->delete();
-            
-            // Limpar seleção e modal
-            $this->selecionados = [];
-            $this->confirmarExclusao = false;
-            
-            // Mensagem de sucesso
-            session()->flash('message', "{$quantidadeExcluida} lançamento(s) excluído(s) com sucesso!");
-            
-            Log::info("Exclusão em massa realizada", [
-                'quantidade_excluida' => $quantidadeExcluida,
-                'ids_excluidos' => $this->selecionados,
-                'usuario' => 'Sistema'
-            ]);
-            
-        } catch (\Exception $e) {
-            Log::error("Erro ao excluir lançamentos", [
-                'erro' => $e->getMessage(),
-                'ids_tentados' => $this->selecionados
-            ]);
-            
-            session()->flash('error', 'Erro ao excluir lançamentos. Tente novamente.');
-        }
-    }
 
     public function cancelarEdicao()
     {
@@ -410,241 +346,13 @@ class TabelaLancamentos extends Component
         $this->valorEditando = '';
     }
 
-    public function toggleSelecao($id)
-    {
-        if (in_array($id, $this->selecionados)) {
-            $this->selecionados = array_diff($this->selecionados, [$id]);
-        } else {
-            $this->selecionados[] = $id;
-        }
-    }
 
-    public function selecionarTodos()
-    {
-        $ids = $this->getLancamentosQuery()->pluck('id')->toArray();
-        $this->selecionados = $ids;
-    }
 
-    public function deselecionarTodos()
-    {
-        $this->selecionados = [];
-    }
 
-    public function aplicarEdicaoMassa()
-    {
-        if (empty($this->selecionados)) {
-            return;
-        }
 
-        $lancamentos = Lancamento::whereIn('id', $this->selecionados)->get();
 
-        foreach ($lancamentos as $lancamento) {
-            $alteracoes = [];
 
-            if (!empty($this->dataMassa) && $lancamento->data->format('Y-m-d') !== $this->dataMassa) {
-                $alteracoes[] = [
-                    'campo' => 'data',
-                    'valor_anterior' => $lancamento->data->format('d/m/Y'),
-                    'valor_novo' => \Carbon\Carbon::parse($this->dataMassa)->format('d/m/Y'),
-                    'tipo' => 'data'
-                ];
-                $lancamento->data = $this->dataMassa;
-            }
 
-            if (!empty($this->contaDebitoMassa) && $lancamento->conta_debito !== $this->contaDebitoMassa) {
-                $alteracoes[] = [
-                    'campo' => 'conta_debito',
-                    'valor_anterior' => $lancamento->conta_debito,
-                    'valor_novo' => $this->contaDebitoMassa,
-                    'tipo' => 'conta'
-                ];
-                $lancamento->conta_debito = $this->contaDebitoMassa;
-                
-                // Atualizar amarração se existir
-                if ($lancamento->amarracao_id) {
-                    $amarracao = \App\Models\Amarracao::find($lancamento->amarracao_id);
-                    if ($amarracao) {
-                        $amarracao->update(['conta_debito' => $this->contaDebitoMassa]);
-                    }
-                }
-            }
-
-            if (!empty($this->contaCreditoMassa) && $lancamento->conta_credito !== $this->contaCreditoMassa) {
-                $alteracoes[] = [
-                    'campo' => 'conta_credito',
-                    'valor_anterior' => $lancamento->conta_credito,
-                    'valor_novo' => $this->contaCreditoMassa,
-                    'tipo' => 'conta'
-                ];
-                $lancamento->conta_credito = $this->contaCreditoMassa;
-                
-                // Atualizar amarração se existir
-                if ($lancamento->amarracao_id) {
-                    $amarracao = \App\Models\Amarracao::find($lancamento->amarracao_id);
-                    if ($amarracao) {
-                        $amarracao->update(['conta_credito' => $this->contaCreditoMassa]);
-                    }
-                }
-            }
-
-            if (!empty($this->terceiroMassa) && $lancamento->nome_empresa !== $this->terceiroMassa) {
-                $alteracoes[] = [
-                    'campo' => 'nome_empresa',
-                    'valor_anterior' => $lancamento->nome_empresa,
-                    'valor_novo' => $this->terceiroMassa,
-                    'tipo' => 'terceiro'
-                ];
-                $lancamento->nome_empresa = $this->terceiroMassa;
-            }
-
-            if (!empty($this->historicoMassa) && $lancamento->historico !== $this->historicoMassa) {
-                $alteracoes[] = [
-                    'campo' => 'historico',
-                    'valor_anterior' => $lancamento->historico,
-                    'valor_novo' => $this->historicoMassa,
-                    'tipo' => 'historico'
-                ];
-                $lancamento->historico = $this->historicoMassa;
-            }
-
-            if (!empty($alteracoes)) {
-                $lancamento->conferido = true; // Marcar como conferido ao editar
-                $lancamento->save();
-
-                foreach ($alteracoes as $alteracao) {
-                    AlteracaoLog::create([
-                        'lancamento_id' => $lancamento->id,
-                        'campo_alterado' => $alteracao['campo'],
-                        'valor_anterior' => $alteracao['valor_anterior'],
-                        'valor_novo' => $alteracao['valor_novo'],
-                        'tipo_alteracao' => $alteracao['tipo'],
-                        'data_alteracao' => now()
-                    ]);
-                }
-            }
-        }
-
-        $this->edicaoMassa = false;
-        $this->selecionados = [];
-        $this->dataMassa = '';
-        $this->contaDebitoMassa = '';
-        $this->contaCreditoMassa = '';
-        $this->terceiroMassa = '';
-        $this->historicoMassa = '';
-    }
-
-    public function atualizarDetalhesOperacao($id, $detalhes)
-    {
-        Log::info("=== INÍCIO atualizarDetalhesOperacao ===");
-        Log::info("Atualizando detalhes da operação", [
-            'lancamento_id' => $id,
-            'detalhes_recebidos' => $detalhes,
-            'tipo_detalhes' => gettype($detalhes),
-            'timestamp' => now()->toDateTimeString()
-        ]);
-        
-        $lancamento = \App\Models\Lancamento::find($id);
-        Log::info("Lancamento encontrado", [
-            'lancamento_id' => $id,
-            'tem_amarracao' => $lancamento ? (bool)$lancamento->amarracao_id : false,
-            'amarracao_id' => $lancamento ? $lancamento->amarracao_id : null
-        ]);
-        
-        if ($lancamento && $lancamento->amarracao_id) {
-            // Converter string para array
-            $tags = is_string($detalhes) ? explode(',', $detalhes) : $detalhes;
-            $tags = array_map('trim', $tags);
-            $tags = array_filter($tags); // Remove vazios
-            
-            // Filtrar artigos e preposições
-            $artigos = ['a', 'o', 'da', 'de', 'do', 'das', 'dos', 'na', 'no', 'nas', 'nos'];
-            $tags = array_filter($tags, function($tag) use ($artigos) {
-                return !in_array(strtolower($tag), $artigos);
-            });
-            
-            $detalhes_str = implode(',', $tags);
-            $valor_anterior = $lancamento->detalhes_operacao;
-            
-            // Atualizar apenas a amarração
-            $amarracao = \App\Models\Amarracao::find($lancamento->amarracao_id);
-            Log::info("Amarração encontrada", [
-                'amarracao_id' => $lancamento->amarracao_id,
-                'encontrada' => (bool)$amarracao,
-                'detalhes_anteriores' => $amarracao ? $amarracao->detalhes_operacao : null,
-                'detalhes_novos' => $detalhes_str
-            ]);
-            
-            if ($amarracao) {
-                $amarracao->update(['detalhes_operacao' => $detalhes_str]);
-                Log::info("Amarração atualizada com sucesso", [
-                    'amarracao_id' => $amarracao->id,
-                    'detalhes_atualizados' => $detalhes_str
-                ]);
-                
-                // Buscar todos os lançamentos que usam a mesma amarração para registrar no log
-                $lancamentosRelacionados = \App\Models\Lancamento::where('amarracao_id', $lancamento->amarracao_id)
-                    ->where('id', '!=', $lancamento->id)
-                    ->get();
-                
-                // Registrar alteração no log para o lançamento original
-                AlteracaoLog::create([
-                    'lancamento_id' => $lancamento->id,
-                    'campo_alterado' => 'detalhes_operacao',
-                    'valor_anterior' => $valor_anterior,
-                    'valor_novo' => $detalhes_str,
-                    'tipo_alteracao' => 'detalhes',
-                    'data_alteracao' => now()
-                ]);
-                
-                // Registrar alteração no log para cada lançamento relacionado
-                foreach ($lancamentosRelacionados as $lancamentoRelacionado) {
-                    AlteracaoLog::create([
-                        'lancamento_id' => $lancamentoRelacionado->id,
-                        'campo_alterado' => 'detalhes_operacao',
-                        'valor_anterior' => $valor_anterior,
-                        'valor_novo' => $detalhes_str,
-                        'tipo_alteracao' => 'detalhes_em_massa',
-                        'data_alteracao' => now()
-                    ]);
-                }
-                
-                // Log informativo sobre quantos lançamentos foram afetados
-                if ($lancamentosRelacionados->count() > 0) {
-                    Log::info("Detalhes da operação atualizados em massa via amarração", [
-                        'lancamento_origem_id' => $lancamento->id,
-                        'amarracao_id' => $lancamento->amarracao_id,
-                        'lançamentos_afetados' => $lancamentosRelacionados->count(),
-                        'detalhes_anteriores' => $valor_anterior,
-                        'detalhes_novos' => $detalhes_str
-                    ]);
-                }
-                
-                // Sempre emitir evento para atualizar o frontend
-                $this->dispatch('tags-atualizadas', [
-                    'amarracao_id' => $lancamento->amarracao_id,
-                    'novas_tags' => $detalhes_str,
-                    'lancamentos_afetados' => $lancamentosRelacionados->pluck('id')->toArray(),
-                    'lancamento_origem_id' => $lancamento->id,
-                ]);
-            }
-        } else {
-            Log::warning("Tentativa de atualizar detalhes de operação em lançamento sem amarração", [
-                'lancamento_id' => $id,
-                'tem_amarracao' => $lancamento ? (bool)$lancamento->amarracao_id : false
-            ]);
-        }
-        
-        Log::info("=== FIM atualizarDetalhesOperacao ===");
-    }
-
-    public function testarComunicacao($id)
-    {
-        Log::info("Teste de comunicação recebido", [
-            'lancamento_id' => $id,
-            'timestamp' => now()->toDateTimeString()
-        ]);
-        return "Comunicação OK para lançamento " . $id;
-    }
 
 
 
@@ -757,7 +465,7 @@ class TabelaLancamentos extends Component
 
     private function getLancamentosQuery()
     {
-        $query = Lancamento::with(['importacao', 'terceiro', 'amarracao', 'alteracoes']);
+        $query = Lancamento::with(['importacao', 'terceiro']);
 
         if (!empty($this->filtroData)) {
             $query->whereDate('data', $this->filtroData);
@@ -817,12 +525,6 @@ class TabelaLancamentos extends Component
                     ELSE nome_empresa 
                 END {$this->direcao}
             ");
-        } elseif ($this->ordenacao === 'detalhes_operacao') {
-            // Ordenação por detalhes_operacao através da relação com amarração
-            $query->leftJoin('amarracoes', 'lancamentos.amarracao_id', '=', 'amarracoes.id')
-                  ->orderBy('amarracoes.detalhes_operacao', $this->direcao)
-                  ->orderBy('lancamentos.id', $this->direcao) // Ordenação secundária para garantir consistência
-                  ->select('lancamentos.*'); // Garantir que apenas colunas de lancamentos sejam retornadas
         } else {
             $query->orderBy($this->ordenacao, $this->direcao);
         }
@@ -1155,16 +857,7 @@ class TabelaLancamentos extends Component
     public function render()
     {
         $query = $this->getLancamentosQuery();
-        
-        // Se estamos ordenando por detalhes_operacao, precisamos garantir que as relações sejam carregadas
-        if ($this->ordenacao === 'detalhes_operacao') {
             $lancamentos = $query->paginate($this->perPage);
-            // Recarregar as relações após a paginação
-            $lancamentos->load(['importacao', 'terceiro', 'amarracao', 'alteracoes']);
-        } else {
-            $lancamentos = $query->paginate($this->perPage);
-        }
-        
         $importacoes = Importacao::orderBy('created_at', 'desc')->get();
 
         return view('livewire.tabela-lancamentos', [
